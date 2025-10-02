@@ -21,6 +21,8 @@ model Task {
   subcategoryId String?
   isRecurring Boolean  @default(false)
   recurringId String?
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

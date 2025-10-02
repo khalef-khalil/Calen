@@ -9,7 +9,7 @@ interface DayViewProps {
   date: Date
   tasks: Task[]
   onTaskClick: (task: Task, event?: React.MouseEvent) => void
-  onAddTask: (event?: React.MouseEvent) => void
+  onAddTask: (date: Date, event?: React.MouseEvent, time?: string) => void
 }
 
 export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayViewProps) {
@@ -40,11 +40,11 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
             </p>
           </div>
           <button
-            onClick={onAddTask}
+            onClick={(e) => onAddTask(date, e)}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Ajouter</span>
+            <span>Add Task</span>
           </button>
         </div>
       </div>
@@ -57,8 +57,12 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
             
             return (
               <div key={hour} className="flex items-start space-x-3 py-2">
-                {/* Heure */}
-                <div className="w-16 text-sm text-gray-500 font-medium">
+                {/* Heure - Clickable */}
+                <div 
+                  className="w-16 text-sm text-gray-500 font-medium cursor-pointer hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                  onClick={(e) => onAddTask(date, e, label)}
+                  title={`Add task at ${label}`}
+                >
                   {label}
                 </div>
                 
@@ -67,14 +71,14 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
                   {hourTasks.map((task) => {
                     const category = categories.find(cat => cat.id === task.categoryId)
                     const colorClasses = {
-                      blue: 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-900',
-                      green: 'bg-green-50 border-green-200 hover:bg-green-100 text-green-900',
-                      purple: 'bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-900',
-                      orange: 'bg-orange-50 border-orange-200 hover:bg-orange-100 text-orange-900',
-                      pink: 'bg-pink-50 border-pink-200 hover:bg-pink-100 text-pink-900',
-                      red: 'bg-red-50 border-red-200 hover:bg-red-100 text-red-900',
-                      indigo: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-900',
-                      teal: 'bg-teal-50 border-teal-200 hover:bg-teal-100 text-teal-900',
+                      blue: task.isCompleted ? 'bg-blue-100 border-blue-300 text-blue-900 line-through opacity-75' : 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-900',
+                      green: task.isCompleted ? 'bg-green-100 border-green-300 text-green-900 line-through opacity-75' : 'bg-green-50 border-green-200 hover:bg-green-100 text-green-900',
+                      purple: task.isCompleted ? 'bg-purple-100 border-purple-300 text-purple-900 line-through opacity-75' : 'bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-900',
+                      orange: task.isCompleted ? 'bg-orange-100 border-orange-300 text-orange-900 line-through opacity-75' : 'bg-orange-50 border-orange-200 hover:bg-orange-100 text-orange-900',
+                      pink: task.isCompleted ? 'bg-pink-100 border-pink-300 text-pink-900 line-through opacity-75' : 'bg-pink-50 border-pink-200 hover:bg-pink-100 text-pink-900',
+                      red: task.isCompleted ? 'bg-red-100 border-red-300 text-red-900 line-through opacity-75' : 'bg-red-50 border-red-200 hover:bg-red-100 text-red-900',
+                      indigo: task.isCompleted ? 'bg-indigo-100 border-indigo-300 text-indigo-900 line-through opacity-75' : 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-900',
+                      teal: task.isCompleted ? 'bg-teal-100 border-teal-300 text-teal-900 line-through opacity-75' : 'bg-teal-50 border-teal-200 hover:bg-teal-100 text-teal-900',
                     }
                     const textColorClasses = {
                       blue: 'text-blue-700',
@@ -104,7 +108,7 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
                       >
                         <div className="flex items-center justify-between">
                           <h3 className="font-medium flex items-center">
-                            {category?.icon} {task.title}
+                            {task.isCompleted && '✓ '}{category?.icon} {task.title}
                           </h3>
                           <span className={`text-xs ${textColorClasses[category?.color as keyof typeof textColorClasses] || 'text-gray-600'}`}>
                             {task.endTime 
@@ -137,9 +141,13 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
                     )
                   })}
                   
-                  {/* Ligne de l'heure si pas de tâches */}
+                  {/* Ligne de l'heure si pas de tâches - Clickable */}
                   {hourTasks.length === 0 && (
-                    <div className="h-12 border-l-2 border-gray-200 border-dashed"></div>
+                    <div 
+                      className="h-12 border-l-2 border-gray-200 border-dashed cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                      onClick={(e) => onAddTask(date, e, label)}
+                      title={`Add task at ${label}`}
+                    ></div>
                   )}
                 </div>
               </div>

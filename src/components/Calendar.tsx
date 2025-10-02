@@ -24,6 +24,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [triggerPosition, setTriggerPosition] = useState<{ x: number; y: number } | undefined>(undefined)
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
+  const [clickedTime, setClickedTime] = useState<string | null>(null)
 
   const calendarDays = getCalendarDays(currentDate)
 
@@ -54,7 +55,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
     setShowTaskModal(true)
   }
 
-  const handleAddTask = (date: Date, event?: React.MouseEvent) => {
+  const handleAddTask = (date: Date, event?: React.MouseEvent, time?: string) => {
     if (event) {
       const rect = event.currentTarget.getBoundingClientRect()
       setTriggerPosition({
@@ -65,6 +66,10 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
     setSelectedDate(date)
     setEditingTask(null)
     setShowTaskModal(true)
+    // Store the clicked time for the modal to use
+    if (time) {
+      setClickedTime(time)
+    }
   }
 
   const handleTaskSave = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -196,22 +201,22 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                         {dayTasks.slice(0, 3).map((task) => {
                           const category = categories.find(cat => cat.id === task.categoryId)
                           const colorClasses = {
-                            blue: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-                            green: 'bg-green-100 text-green-800 hover:bg-green-200',
-                            purple: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
-                            orange: 'bg-orange-100 text-orange-800 hover:bg-orange-200',
-                            pink: 'bg-pink-100 text-pink-800 hover:bg-pink-200',
-                            red: 'bg-red-100 text-red-800 hover:bg-red-200',
-                            indigo: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-                            teal: 'bg-teal-100 text-teal-800 hover:bg-teal-200',
+                            blue: task.isCompleted ? 'bg-blue-200 text-blue-900 line-through opacity-75' : 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                            green: task.isCompleted ? 'bg-green-200 text-green-900 line-through opacity-75' : 'bg-green-100 text-green-800 hover:bg-green-200',
+                            purple: task.isCompleted ? 'bg-purple-200 text-purple-900 line-through opacity-75' : 'bg-purple-100 text-purple-800 hover:bg-purple-200',
+                            orange: task.isCompleted ? 'bg-orange-200 text-orange-900 line-through opacity-75' : 'bg-orange-100 text-orange-800 hover:bg-orange-200',
+                            pink: task.isCompleted ? 'bg-pink-200 text-pink-900 line-through opacity-75' : 'bg-pink-100 text-pink-800 hover:bg-pink-200',
+                            red: task.isCompleted ? 'bg-red-200 text-red-900 line-through opacity-75' : 'bg-red-100 text-red-800 hover:bg-red-200',
+                            indigo: task.isCompleted ? 'bg-indigo-200 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
+                            teal: task.isCompleted ? 'bg-teal-200 text-teal-900 line-through opacity-75' : 'bg-teal-100 text-teal-800 hover:bg-teal-200',
                           }
                           return (
                             <div
                               key={task.id}
                               onClick={(e) => handleTaskClick(task, e)}
-                              className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                              className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || (task.isCompleted ? 'bg-gray-200 text-gray-900 line-through opacity-75' : 'bg-gray-100 text-gray-800 hover:bg-gray-200')}`}
                             >
-                              {category?.icon} {task.title}
+                              {task.isCompleted && '✓ '}{category?.icon} {task.title}
                             </div>
                           )
                         })}
@@ -246,7 +251,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
             date={selectedDate}
             tasks={tasksByDate[selectedDate.toISOString().split('T')[0]] || []}
             onTaskClick={handleTaskClick}
-            onAddTask={(e) => handleAddTask(selectedDate, e)}
+            onAddTask={handleAddTask}
           />
         </div>
       )}
@@ -256,6 +261,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
         <TaskModal
           task={editingTask}
           selectedDate={selectedDate}
+          clickedTime={clickedTime}
           triggerPosition={triggerPosition}
           onSave={handleTaskSave}
           onDelete={editingTask ? () => handleTaskDelete(editingTask.id) : undefined}
@@ -263,6 +269,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
             setShowTaskModal(false)
             setEditingTask(null)
             setTriggerPosition(undefined)
+            setClickedTime(null)
           }}
         />
       )}

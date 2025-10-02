@@ -13,7 +13,7 @@ interface WeekViewProps {
   onTaskUpdate: (id: string, task: Partial<Task>) => Promise<void>
   onTaskDelete: (id: string) => Promise<void>
   onTaskClick: (task: Task, event?: React.MouseEvent) => void
-  onAddTask: (date: Date, event?: React.MouseEvent) => void
+  onAddTask: (date: Date, event?: React.MouseEvent, time?: string) => void
 }
 
 export default function WeekView({ 
@@ -85,19 +85,19 @@ export default function WeekView({
     return position
   }
 
-  const getCategoryColor = (categoryId: string) => {
+  const getCategoryColor = (categoryId: string, isCompleted: boolean) => {
     const category = categories.find(cat => cat.id === categoryId)
     const colorMap = {
-      blue: 'bg-blue-100 border-blue-200 text-blue-800',
-      green: 'bg-green-100 border-green-200 text-green-800',
-      purple: 'bg-purple-100 border-purple-200 text-purple-800',
-      orange: 'bg-orange-100 border-orange-200 text-orange-800',
-      pink: 'bg-pink-100 border-pink-200 text-pink-800',
-      red: 'bg-red-100 border-red-200 text-red-800',
-      indigo: 'bg-indigo-100 border-indigo-200 text-indigo-800',
-      teal: 'bg-teal-100 border-teal-200 text-teal-800',
+      blue: isCompleted ? 'bg-blue-200 border-blue-300 text-blue-900 line-through opacity-75' : 'bg-blue-100 border-blue-200 text-blue-800',
+      green: isCompleted ? 'bg-green-200 border-green-300 text-green-900 line-through opacity-75' : 'bg-green-100 border-green-200 text-green-800',
+      purple: isCompleted ? 'bg-purple-200 border-purple-300 text-purple-900 line-through opacity-75' : 'bg-purple-100 border-purple-200 text-purple-800',
+      orange: isCompleted ? 'bg-orange-200 border-orange-300 text-orange-900 line-through opacity-75' : 'bg-orange-100 border-orange-200 text-orange-800',
+      pink: isCompleted ? 'bg-pink-200 border-pink-300 text-pink-900 line-through opacity-75' : 'bg-pink-100 border-pink-200 text-pink-800',
+      red: isCompleted ? 'bg-red-200 border-red-300 text-red-900 line-through opacity-75' : 'bg-red-100 border-red-200 text-red-800',
+      indigo: isCompleted ? 'bg-indigo-200 border-indigo-300 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 border-indigo-200 text-indigo-800',
+      teal: isCompleted ? 'bg-teal-200 border-teal-300 text-teal-900 line-through opacity-75' : 'bg-teal-100 border-teal-200 text-teal-800',
     }
-    return colorMap[category?.color as keyof typeof colorMap] || 'bg-gray-100 border-gray-200 text-gray-800'
+    return colorMap[category?.color as keyof typeof colorMap] || (isCompleted ? 'bg-gray-200 border-gray-300 text-gray-900 line-through opacity-75' : 'bg-gray-100 border-gray-200 text-gray-800')
   }
 
   return (
@@ -178,14 +178,14 @@ export default function WeekView({
                         className={`h-16 border-b border-gray-100 relative group cursor-pointer ${
                           isCurrentHour ? 'bg-blue-50' : 'hover:bg-gray-50'
                         }`}
-                        onClick={(e) => onAddTask(day, e)}
+                        onClick={(e) => onAddTask(day, e, slot.time)}
                       >
                         {/* Add Task Button */}
                         <button
                           className="opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation()
-                            onAddTask(day, e)
+                            onAddTask(day, e, slot.time)
                           }}
                         >
                           <Plus className="w-4 h-4 text-gray-400" />
@@ -203,7 +203,7 @@ export default function WeekView({
                             return (
                               <div
                                 key={task.id}
-                                className={`absolute left-1 right-1 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId)}`}
+                                className={`absolute left-1 right-1 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.isCompleted)}`}
                                 style={{
                                   top,
                                   height: height === '100%' ? 'calc(100% - 4px)' : height,
@@ -213,7 +213,7 @@ export default function WeekView({
                               >
                                 <div className="p-1 truncate">
                                   <div className="font-medium truncate">
-                                    {category?.icon} {task.title}
+                                    {task.isCompleted && '✓ '}{category?.icon} {task.title}
                                   </div>
                                   {task.endTime && (
                                     <div className="text-xs opacity-75 truncate">

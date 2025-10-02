@@ -100,6 +100,8 @@ export default function CategoryDashboard() {
           startTime: new Date(task.startTime),
           endTime: task.endTime ? new Date(task.endTime) : null,
           date: new Date(task.date),
+          isCompleted: task.isCompleted ?? false,
+          completedAt: task.completedAt ? new Date(task.completedAt) : null,
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt),
         }))

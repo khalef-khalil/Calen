@@ -40,6 +40,8 @@ export interface Task {
   subcategoryId: string | null
   isRecurring: boolean
   recurringId: string | null
+  isCompleted: boolean
+  completedAt: Date | null
   createdAt: Date
   updatedAt: Date
   category?: Category

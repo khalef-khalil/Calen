@@ -14,8 +14,10 @@ interface TimeStats {
   categoryIcon: string
   categoryColor: string
   hours: number
+  completedHours: number
   recommended: number
   percentage: number
+  completionRate: number
   status: 'good' | 'warning' | 'critical'
 }
 
@@ -77,16 +79,30 @@ export default function Dashboard() {
   const calculateTimeStats = (tasks: Task[]) => {
     const stats: TimeStats[] = categories.map(category => {
       const categoryTasks = tasks.filter(task => task.categoryId === category.id)
+      
+      // Calculate total planned hours
       const totalHours = categoryTasks.reduce((total, task) => {
         if (task.endTime) {
           const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
           return total + duration
         }
-        return total + 1 // Si pas d'heure de fin, compter 1 heure
+        return total + 1 // If no end time, count 1 hour
       }, 0)
+
+      // Calculate completed hours
+      const completedHours = categoryTasks
+        .filter(task => task.isCompleted)
+        .reduce((total, task) => {
+          if (task.endTime) {
+            const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
+            return total + duration
+          }
+          return total + 1 // If no end time, count 1 hour
+        }, 0)
 
       const recommended = category.weeklyGoal
       const percentage = recommended > 0 ? (totalHours / recommended) * 100 : 0
+      const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
 
       let status: 'good' | 'warning' | 'critical' = 'good'
       if (recommended > 0) {
@@ -100,8 +116,10 @@ export default function Dashboard() {
         categoryIcon: category.icon,
         categoryColor: category.color,
         hours: Math.round(totalHours * 10) / 10,
+        completedHours: Math.round(completedHours * 10) / 10,
         recommended,
         percentage: Math.round(percentage),
+        completionRate: Math.round(completionRate),
         status
       }
     })
@@ -230,13 +248,25 @@ export default function Dashboard() {
                     <div className="text-sm text-gray-600">
                       {stat.recommended > 0 ? `of ${stat.recommended}h` : 'Not set'}
                     </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {stat.completedHours}h completed
+                    </div>
                     {stat.recommended > 0 && (
                       <div className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
                         stat.status === 'good' ? 'bg-green-100 text-green-700' :
                         stat.status === 'warning' ? 'bg-yellow-100 text-yellow-700' : 
                         'bg-red-100 text-red-700'
                       }`}>
-                        {stat.percentage}%
+                        {stat.percentage}% planned
+                      </div>
+                    )}
+                    {stat.hours > 0 && (
+                      <div className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
+                        stat.completionRate >= 80 ? 'bg-green-100 text-green-700' :
+                        stat.completionRate >= 50 ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {stat.completionRate}% completed
                       </div>
                     )}
                   </div>
@@ -248,12 +278,18 @@ export default function Dashboard() {
 
         {/* Summary stats */}
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
                 {timeStats.reduce((sum, stat) => sum + stat.hours, 0)}h
               </div>
-              <div className="text-sm text-gray-600">Total this week</div>
+              <div className="text-sm text-gray-600">Total planned</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {timeStats.reduce((sum, stat) => sum + stat.completedHours, 0)}h
+              </div>
+              <div className="text-sm text-gray-600">Completed</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">

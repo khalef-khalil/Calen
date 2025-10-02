@@ -10,13 +10,14 @@ import { generateRecurringDates, createTaskInstance } from '@/lib/recurring-date
 interface TaskModalProps {
   task?: Task | null
   selectedDate?: Date | null
+  clickedTime?: string | null
   onSave: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
   onDelete?: () => Promise<void>
   onClose: () => void
   triggerPosition?: { x: number; y: number }
 }
 
-export default function TaskModal({ task, selectedDate, onSave, onDelete, onClose, triggerPosition }: TaskModalProps) {
+export default function TaskModal({ task, selectedDate, clickedTime, onSave, onDelete, onClose, triggerPosition }: TaskModalProps) {
   const { categories, subcategories } = useCategories()
   
   const durationOptions = [
@@ -28,12 +29,13 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    startTime: '09:00',
+    startTime: clickedTime || '09:00',
     endTime: '',
     date: selectedDate || new Date(),
     categoryId: '',
     subcategoryId: '',
     isRecurring: false,
+    isCompleted: false,
     // Recurring task fields
     frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
     dayOfWeek: 1, // Monday by default
@@ -56,6 +58,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
         categoryId: task.categoryId || '',
         subcategoryId: task.subcategoryId || '',
         isRecurring: task.isRecurring,
+        isCompleted: task.isCompleted ?? false,
         // Recurring task fields - these would come from the recurring task if it exists
         frequency: 'daily',
         dayOfWeek: 1,
@@ -66,18 +69,19 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
       setFormData(prev => ({
         ...prev,
         date: selectedDate,
+        startTime: clickedTime || prev.startTime,
         categoryId: categories[0]?.id || '',
       }))
     }
     
-    // Always ensure we have a category selected if categories are available
-    if (categories.length > 0 && !formData.categoryId) {
+    // Only set default category for new tasks, not when editing existing tasks
+    if (!task && categories.length > 0 && !formData.categoryId) {
       setFormData(prev => ({
         ...prev,
         categoryId: categories[0].id
       }))
     }
-  }, [task, selectedDate, categories])
+  }, [task, selectedDate, clickedTime, categories])
 
   // Animation d'ouverture
   useEffect(() => {
@@ -190,6 +194,8 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
           subcategoryId: formData.subcategoryId || null,
           isRecurring: false,
           recurringId: null,
+          isCompleted: formData.isCompleted,
+          completedAt: formData.isCompleted ? new Date() : null,
         })
       }
       
@@ -373,17 +379,32 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
                     </div>
                   )}
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isRecurring"
-              checked={formData.isRecurring}
-              onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isRecurring" className="ml-2 text-sm text-gray-700">
-              Recurring task
-            </label>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isCompleted"
+                checked={formData.isCompleted}
+                onChange={(e) => setFormData(prev => ({ ...prev, isCompleted: e.target.checked }))}
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isCompleted" className="ml-2 text-sm text-gray-700">
+                Mark as completed
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isRecurring"
+                checked={formData.isRecurring}
+                onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isRecurring" className="ml-2 text-sm text-gray-700">
+                Recurring task
+              </label>
+            </div>
           </div>
 
           {/* Recurring Task Options */}

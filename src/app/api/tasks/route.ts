@@ -7,18 +7,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const categoryId = searchParams.get('categoryId')
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'Dates de début et de fin requises' }, { status: 400 })
     }
 
-    const tasks = await prisma.task.findMany({
-      where: {
-        date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
+    const whereClause: any = {
+      date: {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
       },
+    }
+
+    if (categoryId) {
+      whereClause.categoryId = categoryId
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: whereClause,
       include: {
         category: true,
         subcategory: true,
@@ -40,7 +47,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId } = body
+    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId, isCompleted, completedAt } = body
 
     console.log('Creating task with data:', { title, categoryId, subcategoryId, isRecurring })
 
@@ -60,6 +67,8 @@ export async function POST(request: NextRequest) {
         subcategoryId,
         isRecurring,
         recurringId,
+        isCompleted: isCompleted ?? false,
+        completedAt: completedAt ? new Date(completedAt) : null,
       },
       include: {
         category: true,

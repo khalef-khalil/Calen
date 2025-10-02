@@ -26,6 +26,8 @@ export default function CalendarPage() {
           startTime: new Date(newTask.startTime),
           endTime: newTask.endTime ? new Date(newTask.endTime) : null,
           date: new Date(newTask.date),
+          isCompleted: newTask.isCompleted ?? false,
+          completedAt: newTask.completedAt ? new Date(newTask.completedAt) : null,
           createdAt: new Date(newTask.createdAt),
           updatedAt: new Date(newTask.updatedAt),
         }])
@@ -61,6 +63,8 @@ export default function CalendarPage() {
           startTime: new Date(task.startTime),
           endTime: task.endTime ? new Date(task.endTime) : null,
           date: new Date(task.date),
+          isCompleted: task.isCompleted ?? false,
+          completedAt: task.completedAt ? new Date(task.completedAt) : null,
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt),
         }))
@@ -101,6 +105,8 @@ export default function CalendarPage() {
                 startTime: new Date(updatedTask.startTime),
                 endTime: updatedTask.endTime ? new Date(updatedTask.endTime) : null,
                 date: new Date(updatedTask.date),
+                isCompleted: updatedTask.isCompleted ?? false,
+                completedAt: updatedTask.completedAt ? new Date(updatedTask.completedAt) : null,
                 createdAt: new Date(updatedTask.createdAt),
                 updatedAt: new Date(updatedTask.updatedAt),
               }
