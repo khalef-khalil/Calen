@@ -22,10 +22,10 @@ export default function Home() {
 
   if (isChecking || loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <div className="w-8 h-8 bg-gray-200 rounded-lg mx-auto animate-pulse"></div>
+          <p className="mt-4 text-gray-500 text-sm">Loading...</p>
         </div>
       </div>
     )
