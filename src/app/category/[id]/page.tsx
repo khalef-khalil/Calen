@@ -6,18 +6,22 @@ import { ArrowLeft, Clock, TrendingUp, BarChart3, Plus, Edit, Trash2, Settings }
 import Link from 'next/link'
 import { useCategories } from '@/contexts/CategoryContext'
 import { Task, Subcategory } from '@/types/category'
-import ProgressRing from '@/components/ProgressRing'
+import DualProgressRing from '@/components/DualProgressRing'
+import { getCategoryColor, COMPLETION_COLOR } from '@/lib/category-colors'
 
 interface CategoryStats {
   totalHours: number
+  completedHours: number
   weeklyGoal: number
   percentage: number
+  completionRate: number
   status: 'good' | 'warning' | 'critical'
   tasksThisWeek: Task[]
   subcategoryStats: Array<{
     subcategoryId: string
     subcategoryName: string
     hours: number
+    completedHours: number
     taskCount: number
   }>
 }
@@ -126,8 +130,19 @@ export default function CategoryDashboard() {
       return total + 1 // Si pas d'heure de fin, compter 1 heure
     }, 0)
 
+    const completedHours = tasks
+      .filter(task => task.isCompleted)
+      .reduce((total, task) => {
+        if (task.endTime) {
+          const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
+          return total + duration
+        }
+        return total + 1
+      }, 0)
+
     const weeklyGoal = category.weeklyGoal
     const percentage = weeklyGoal > 0 ? (totalHours / weeklyGoal) * 100 : 0
+    const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
 
     let status: 'good' | 'warning' | 'critical' = 'good'
     if (weeklyGoal > 0) {
@@ -148,18 +163,31 @@ export default function CategoryDashboard() {
           return total + 1
         }, 0)
         
+        const subCompletedHours = subTasks
+          .filter(task => task.isCompleted)
+          .reduce((total, task) => {
+            if (task.endTime) {
+              const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
+              return total + duration
+            }
+            return total + 1
+          }, 0)
+        
         return {
           subcategoryId: sub.id,
           subcategoryName: sub.name,
           hours: Math.round(hours * 10) / 10,
+          completedHours: Math.round(subCompletedHours * 10) / 10,
           taskCount: subTasks.length
         }
       })
 
     setStats({
       totalHours: Math.round(totalHours * 10) / 10,
+      completedHours: Math.round(completedHours * 10) / 10,
       weeklyGoal,
       percentage: Math.round(percentage),
+      completionRate: Math.round(completionRate),
       status,
       tasksThisWeek: tasks,
       subcategoryStats
@@ -179,18 +207,6 @@ export default function CategoryDashboard() {
     }
   }
 
-  const getRingColor = (status: string) => {
-    switch (status) {
-      case 'good':
-        return '#10b981' // green-500
-      case 'warning':
-        return '#f59e0b' // yellow-500
-      case 'critical':
-        return '#ef4444' // red-500
-      default:
-        return '#6b7280' // gray-500
-    }
-  }
 
   if (loading) {
     return (
@@ -261,25 +277,34 @@ export default function CategoryDashboard() {
         </div>
         
         <div className="flex justify-center">
-          <ProgressRing
+          <DualProgressRing
             size={280}
             strokeWidth={16}
-            progress={stats ? Math.min(stats.percentage, 100) : 0}
-            color={stats ? getRingColor(stats.status) : '#6b7280'}
+            plannedProgress={stats ? Math.min(stats.percentage, 100) : 0}
+            completedProgress={stats ? stats.completionRate : 0}
+            plannedColor={getCategoryColor(category?.color || 'gray')}
+            completedColor={COMPLETION_COLOR}
             label={category?.name || 'Category'}
-            value={stats ? `${stats.totalHours}h` : '0h'}
+            plannedValue={stats ? `${stats.totalHours}h` : '0h'}
+            completedValue={stats ? `${stats.completedHours}h` : ''}
             icon={category?.icon}
             className="hover:scale-105 transition-transform duration-200"
           />
         </div>
 
         {/* Additional stats below main ring */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">
               {stats?.totalHours || 0}h
             </div>
-            <div className="text-sm text-gray-600">This week</div>
+            <div className="text-sm text-gray-600">Planned</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {stats?.completedHours || 0}h
+            </div>
+            <div className="text-sm text-gray-600">Completed</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">
@@ -289,13 +314,13 @@ export default function CategoryDashboard() {
           </div>
           <div className="text-center">
             <div className={`text-2xl font-bold ${
-              stats?.status === 'good' ? 'text-green-600' :
-              stats?.status === 'warning' ? 'text-yellow-600' : 
+              stats?.completionRate >= 80 ? 'text-green-600' :
+              stats?.completionRate >= 50 ? 'text-yellow-600' : 
               'text-red-600'
             }`}>
-              {stats?.percentage || 0}%
+              {stats?.completionRate || 0}%
             </div>
-            <div className="text-sm text-gray-600">Complete</div>
+            <div className="text-sm text-gray-600">Completion rate</div>
           </div>
         </div>
       </div>
@@ -380,16 +405,20 @@ export default function CategoryDashboard() {
             {stats.subcategoryStats.map((sub) => {
               const subcategory = categorySubcategories.find(s => s.id === sub.subcategoryId)
               const subcategoryProgress = sub.hours > 0 ? Math.min((sub.hours / 10) * 100, 100) : 0 // Assuming 10h as max for subcategories
+              const subcategoryCompletionRate = sub.hours > 0 ? (sub.completedHours / sub.hours) * 100 : 0
               
               return (
                 <div key={sub.subcategoryId} className="group cursor-pointer">
-                  <ProgressRing
+                  <DualProgressRing
                     size={140}
                     strokeWidth={8}
-                    progress={subcategoryProgress}
-                    color="#3b82f6" // blue-500
+                    plannedProgress={subcategoryProgress}
+                    completedProgress={subcategoryCompletionRate}
+                    plannedColor={getCategoryColor(category?.color || 'gray')}
+                    completedColor={COMPLETION_COLOR}
                     label={sub.subcategoryName}
-                    value={`${sub.hours}h`}
+                    plannedValue={`${sub.hours}h`}
+                    completedValue={sub.hours > 0 ? `${sub.completedHours}h` : ''}
                     className="group-hover:scale-105 transition-transform duration-200"
                   />
                   
@@ -398,6 +427,11 @@ export default function CategoryDashboard() {
                     <div className="text-sm text-gray-600">
                       {sub.taskCount} task{sub.taskCount > 1 ? 's' : ''}
                     </div>
+                    {sub.hours > 0 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {Math.round(subcategoryCompletionRate)}% completed
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -443,7 +477,7 @@ export default function CategoryDashboard() {
 
       {/* Subcategory Modal */}
       {showSubcategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {editingSubcategory ? 'Edit Subcategory' : 'Create Subcategory'}

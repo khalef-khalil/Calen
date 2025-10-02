@@ -6,7 +6,8 @@ import { Task } from '@/types/category'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useCategories } from '@/contexts/CategoryContext'
 import Link from 'next/link'
-import ProgressRing from '@/components/ProgressRing'
+import DualProgressRing from '@/components/DualProgressRing'
+import { getCategoryColor, COMPLETION_COLOR } from '@/lib/category-colors'
 
 interface TimeStats {
   categoryId: string
@@ -216,29 +217,20 @@ export default function Dashboard() {
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 justify-items-center">
           {timeStats.map((stat) => {
-            const getRingColor = (status: string) => {
-              switch (status) {
-                case 'good':
-                  return '#10b981' // green-500
-                case 'warning':
-                  return '#f59e0b' // yellow-500
-                case 'critical':
-                  return '#ef4444' // red-500
-                default:
-                  return '#6b7280' // gray-500
-              }
-            }
 
             return (
               <Link key={stat.categoryId} href={`/category/${stat.categoryId}`}>
                 <div className="group cursor-pointer">
-                  <ProgressRing
+                  <DualProgressRing
                     size={180}
                     strokeWidth={12}
-                    progress={stat.recommended > 0 ? Math.min(stat.percentage, 100) : 0}
-                    color={getRingColor(stat.status)}
+                    plannedProgress={stat.recommended > 0 ? Math.min(stat.percentage, 100) : 0}
+                    completedProgress={stat.hours > 0 ? stat.completionRate : 0}
+                    plannedColor={getCategoryColor(stat.categoryColor)}
+                    completedColor={COMPLETION_COLOR}
                     label={stat.categoryName}
-                    value={stat.recommended > 0 ? `${stat.hours}h` : '--'}
+                    plannedValue={stat.recommended > 0 ? `${stat.hours}h` : '--'}
+                    completedValue={stat.hours > 0 ? `${stat.completedHours}h` : ''}
                     icon={stat.categoryIcon}
                     className="group-hover:scale-105 transition-transform duration-200"
                   />
