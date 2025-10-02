@@ -28,9 +28,14 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
 
   const calendarDays = getCalendarDays(currentDate)
 
-  // Grouper les tâches par date
+  // Grouper les tâches par date (timezone-safe)
   const tasksByDate = tasks.reduce((acc, task) => {
-    const dateKey = task.date.toISOString().split('T')[0]
+    // Use local date components to avoid timezone issues
+    const year = task.date.getFullYear()
+    const month = String(task.date.getMonth() + 1).padStart(2, '0')
+    const day = String(task.date.getDate()).padStart(2, '0')
+    const dateKey = `${year}-${month}-${day}`
+    
     if (!acc[dateKey]) {
       acc[dateKey] = []
     }
@@ -166,7 +171,11 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
               {/* Jours du mois */}
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, index) => {
-                  const dateKey = day.date.toISOString().split('T')[0]
+                  // Use local date components to match the task grouping
+                  const year = day.date.getFullYear()
+                  const month = String(day.date.getMonth() + 1).padStart(2, '0')
+                  const dayNum = String(day.date.getDate()).padStart(2, '0')
+                  const dateKey = `${year}-${month}-${dayNum}`
                   const dayTasks = tasksByDate[dateKey] || []
                   const isSelected = selectedDate && day.date.toDateString() === selectedDate.toDateString()
 

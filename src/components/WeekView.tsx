@@ -49,9 +49,14 @@ export default function WeekView({
 
   const weekDays = getWeekDays(currentWeek)
 
-  // Group tasks by date and time (only show in starting time slot)
+  // Group tasks by date and time (timezone-safe)
   const tasksByDateAndTime = tasks.reduce((acc, task) => {
-    const dateKey = task.date.toISOString().split('T')[0]
+    // Use local date components to avoid timezone issues
+    const year = task.date.getFullYear()
+    const month = String(task.date.getMonth() + 1).padStart(2, '0')
+    const day = String(task.date.getDate()).padStart(2, '0')
+    const dateKey = `${year}-${month}-${day}`
+    
     const hour = task.startTime.getHours()
     const minute = task.startTime.getMinutes()
     const timeSlotKey = `${hour}:${minute < 30 ? '00' : '30'}`
@@ -94,7 +99,11 @@ export default function WeekView({
 
   // Check if a time slot is occupied by a multi-hour task
   const isTimeSlotOccupied = (day: Date, timeSlot: { hour: number; minute: number }) => {
-    const dateKey = day.toISOString().split('T')[0]
+    // Use local date components to match the task grouping
+    const year = day.getFullYear()
+    const month = String(day.getMonth() + 1).padStart(2, '0')
+    const dayNum = String(day.getDate()).padStart(2, '0')
+    const dateKey = `${year}-${month}-${dayNum}`
     const dayTasks = tasksByDateAndTime[dateKey] || {}
     
     // Check all tasks for this day to see if any span over this time slot
@@ -206,7 +215,11 @@ export default function WeekView({
 
             {/* Day Columns */}
             {weekDays.map((day, dayIndex) => {
-              const dateKey = day.toISOString().split('T')[0]
+              // Use local date components to match the task grouping
+              const year = day.getFullYear()
+              const month = String(day.getMonth() + 1).padStart(2, '0')
+              const dayNum = String(day.getDate()).padStart(2, '0')
+              const dateKey = `${year}-${month}-${dayNum}`
               const dayTasks = tasksByDateAndTime[dateKey] || {}
               const isToday = isSameDay(day, new Date())
 
