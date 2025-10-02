@@ -272,7 +272,14 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
         <div className="w-96 border-l bg-white">
           <DayView
             date={selectedDate}
-            tasks={tasksByDate[selectedDate.toISOString().split('T')[0]] || []}
+            tasks={(() => {
+              // Use local date components to match the task grouping
+              const year = selectedDate.getFullYear()
+              const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+              const day = String(selectedDate.getDate()).padStart(2, '0')
+              const dateKey = `${year}-${month}-${day}`
+              return tasksByDate[dateKey] || []
+            })()}
             onTaskClick={handleTaskClick}
             onAddTask={handleAddTask}
             onClose={() => setSelectedDate(null)}

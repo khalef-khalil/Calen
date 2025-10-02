@@ -49,8 +49,21 @@ export default function WeekView({
 
   const weekDays = getWeekDays(currentWeek)
 
+  // Filter tasks to only include those within the current week
+  const weekStart = weekDays[0]
+  const weekEnd = weekDays[6]
+  const weekTasks = tasks.filter(task => {
+    const taskDate = new Date(task.date)
+    // Set time to start/end of day for proper comparison
+    const taskDateStart = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate())
+    const weekStartDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate())
+    const weekEndDate = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate())
+    
+    return taskDateStart >= weekStartDate && taskDateStart <= weekEndDate
+  })
+
   // Group tasks by date and time (timezone-safe)
-  const tasksByDateAndTime = tasks.reduce((acc, task) => {
+  const tasksByDateAndTime = weekTasks.reduce((acc, task) => {
     // Use local date components to avoid timezone issues
     const year = task.date.getFullYear()
     const month = String(task.date.getMonth() + 1).padStart(2, '0')
