@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:reset": "./scripts/reset-db.sh",
     "deploy": "npm run db:generate && npm run build && npm run start"
   },
   "dependencies": {
