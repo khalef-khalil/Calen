@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Calendar from '@/components/Calendar'
+import CalendarSkeleton from '@/components/CalendarSkeleton'
 import { Task } from '@/types/task'
 // Removed recurring task generation - now handled upfront in TaskModal
 
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false)
 
   const handleTaskCreate = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
@@ -82,6 +84,13 @@ export default function CalendarPage() {
   // Charger les tâches au montage du composant
   useEffect(() => {
     loadTasks()
+    
+    // Set minimum loading duration
+    const minLoadingTimer = setTimeout(() => {
+      setMinLoadingComplete(true)
+    }, 1000)
+    
+    return () => clearTimeout(minLoadingTimer)
   }, [])
 
   // Removed automatic recurring task generation - now handled upfront in TaskModal
@@ -138,15 +147,8 @@ export default function CalendarPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement du calendrier...</p>
-        </div>
-      </div>
-    )
+  if (loading || !minLoadingComplete) {
+    return <CalendarSkeleton />
   }
 
   return (

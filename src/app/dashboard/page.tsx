@@ -8,6 +8,7 @@ import { useCategories } from '@/contexts/CategoryContext'
 import Link from 'next/link'
 import DualProgressRing from '@/components/DualProgressRing'
 import { getCategoryColor, COMPLETION_COLOR } from '@/lib/category-colors'
+import DashboardSkeleton from '@/components/DashboardSkeleton'
 
 interface TimeStats {
   categoryId: string
@@ -29,9 +30,17 @@ export default function Dashboard() {
   const [timeStats, setTimeStats] = useState<TimeStats[]>([])
   const [loading, setLoading] = useState(true)
   const [hasEnoughData, setHasEnoughData] = useState(false)
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false)
 
   useEffect(() => {
     loadTasks()
+    
+    // Set minimum loading duration
+    const minLoadingTimer = setTimeout(() => {
+      setMinLoadingComplete(true)
+    }, 1000)
+    
+    return () => clearTimeout(minLoadingTimer)
   }, [])
 
   const loadTasks = async () => {
@@ -78,11 +87,18 @@ export default function Dashboard() {
   }
 
   const calculateTimeStats = (tasks: Task[]) => {
+    const now = new Date()
     const stats: TimeStats[] = categories.map(category => {
       const categoryTasks = tasks.filter(task => task.categoryId === category.id)
       
-      // Calculate total planned hours
-      const totalHours = categoryTasks.reduce((total, task) => {
+      // Filter to only tasks that have passed their scheduled time
+      const passedTasks = categoryTasks.filter(task => {
+        const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+        return taskEndTime <= now
+      })
+      
+      // Calculate total planned hours for passed tasks only
+      const totalHours = passedTasks.reduce((total, task) => {
         if (task.endTime) {
           const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
           return total + duration
@@ -90,8 +106,8 @@ export default function Dashboard() {
         return total + 1 // If no end time, count 1 hour
       }, 0)
 
-      // Calculate completed hours
-      const completedHours = categoryTasks
+      // Calculate completed hours for passed tasks only
+      const completedHours = passedTasks
         .filter(task => task.isCompleted)
         .reduce((total, task) => {
           if (task.endTime) {
@@ -106,9 +122,11 @@ export default function Dashboard() {
       const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
 
       let status: 'good' | 'warning' | 'critical' = 'good'
-      if (recommended > 0) {
-        if (percentage < 50) status = 'critical'
-        else if (percentage < 80) status = 'warning'
+      // New logic: Alert based on completion rate, not weekly goals
+      if (totalHours > 0) {
+        if (completionRate < settings.completionThreshold) {
+          status = 'critical'
+        }
       }
 
       return {
@@ -154,15 +172,8 @@ export default function Dashboard() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
+  if (loading || !minLoadingComplete) {
+    return <DashboardSkeleton />
   }
 
   return (
@@ -309,7 +320,7 @@ export default function Dashboard() {
           
         <div className="space-y-4">
           {timeStats.map((stat) => {
-            if (stat.recommended === 0) return null // Skip if no goal set
+            if (stat.hours === 0) return null // Skip if no tasks allocated
             
             if (stat.status === 'critical') {
               return (
@@ -317,26 +328,12 @@ export default function Dashboard() {
                   <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
                   <div>
                     <p className="font-medium text-red-800">
-                      Warning: {stat.categoryName} neglected
+                      Low completion rate: {stat.categoryName}
                     </p>
                     <p className="text-sm text-red-600">
-                      You only spent {stat.hours}h on {stat.categoryName.toLowerCase()} this week. 
-                      The recommended goal is {stat.recommended}h.
-                    </p>
-                  </div>
-                </div>
-              )
-            } else if (stat.status === 'warning') {
-              return (
-                <div key={stat.categoryId} className="flex items-start space-x-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-yellow-800">
-                      Warning: {stat.categoryName} under-represented
-                    </p>
-                    <p className="text-sm text-yellow-600">
-                      You are at {stat.percentage}% of your goal for {stat.categoryName.toLowerCase()}. 
-                      Try adding {Math.ceil(stat.recommended - stat.hours)}h this week.
+                      You completed only {stat.completionRate}% of your passed {stat.categoryName.toLowerCase()} tasks 
+                      ({stat.completedHours}h out of {stat.hours}h that have already occurred). 
+                      Your threshold is {settings.completionThreshold}%.
                     </p>
                   </div>
                 </div>
@@ -345,15 +342,15 @@ export default function Dashboard() {
             return null
           })}
 
-            {timeStats.every(stat => stat.status === 'good' || stat.recommended === 0) && timeStats.some(stat => stat.recommended > 0) && (
+            {timeStats.every(stat => stat.status === 'good' || stat.hours === 0) && timeStats.some(stat => stat.hours > 0) && (
               <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-green-800">
-                    Excellent life balance!
+                    Excellent completion rates!
                   </p>
                   <p className="text-sm text-green-600">
-                    You maintain a good balance between all aspects of your life this week.
+                    All your categories are meeting the {settings.completionThreshold}% completion threshold for passed tasks.
                   </p>
                 </div>
               </div>

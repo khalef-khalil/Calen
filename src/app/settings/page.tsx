@@ -202,6 +202,28 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between">
                 <div>
+                  <h3 className="font-medium text-gray-900">Completion threshold</h3>
+                  <p className="text-sm text-gray-600">
+                    Minimum completion rate for passed tasks to avoid alerts (0-100%)
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="range"
+                    value={settings.completionThreshold}
+                    onChange={(e) => updateSettings({ completionThreshold: parseInt(e.target.value) })}
+                    className="w-32"
+                    min="0"
+                    max="100"
+                  />
+                  <span className="w-12 text-center font-medium text-gray-900">
+                    {settings.completionThreshold}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
                   <h3 className="font-medium text-gray-900">Enable alerts</h3>
                   <p className="text-sm text-gray-600">
                     Show imbalance alerts in the dashboard

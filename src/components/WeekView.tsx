@@ -45,7 +45,7 @@ export default function WeekView({
 
   const weekDays = getWeekDays(currentWeek)
 
-  // Group tasks by date and time
+  // Group tasks by date and time (only show in starting hour)
   const tasksByDateAndTime = tasks.reduce((acc, task) => {
     const dateKey = task.date.toISOString().split('T')[0]
     const hour = task.startTime.getHours()
@@ -85,6 +85,23 @@ export default function WeekView({
     return position
   }
 
+  // Check if a time slot is occupied by a multi-hour task
+  const isTimeSlotOccupied = (day: Date, hour: number) => {
+    const dateKey = day.toISOString().split('T')[0]
+    const dayTasks = tasksByDateAndTime[dateKey] || {}
+    
+    // Check all tasks for this day to see if any span over this hour
+    const allDayTasks = Object.values(dayTasks).flat()
+    
+    return allDayTasks.some(task => {
+      const startHour = task.startTime.getHours()
+      const endHour = task.endTime ? task.endTime.getHours() : startHour + 1
+      
+      // Check if this hour falls within the task's time range
+      return hour >= startHour && hour < endHour
+    })
+  }
+
   const getCategoryColor = (categoryId: string, isCompleted: boolean) => {
     const category = categories.find(cat => cat.id === categoryId)
     const colorMap = {
@@ -96,6 +113,20 @@ export default function WeekView({
       red: isCompleted ? 'bg-red-200 border-red-300 text-red-900 line-through opacity-75' : 'bg-red-100 border-red-200 text-red-800',
       indigo: isCompleted ? 'bg-indigo-200 border-indigo-300 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 border-indigo-200 text-indigo-800',
       teal: isCompleted ? 'bg-teal-200 border-teal-300 text-teal-900 line-through opacity-75' : 'bg-teal-100 border-teal-200 text-teal-800',
+      yellow: isCompleted ? 'bg-yellow-200 border-yellow-300 text-yellow-900 line-through opacity-75' : 'bg-yellow-100 border-yellow-200 text-yellow-800',
+      lime: isCompleted ? 'bg-lime-200 border-lime-300 text-lime-900 line-through opacity-75' : 'bg-lime-100 border-lime-200 text-lime-800',
+      emerald: isCompleted ? 'bg-emerald-200 border-emerald-300 text-emerald-900 line-through opacity-75' : 'bg-emerald-100 border-emerald-200 text-emerald-800',
+      cyan: isCompleted ? 'bg-cyan-200 border-cyan-300 text-cyan-900 line-through opacity-75' : 'bg-cyan-100 border-cyan-200 text-cyan-800',
+      sky: isCompleted ? 'bg-sky-200 border-sky-300 text-sky-900 line-through opacity-75' : 'bg-sky-100 border-sky-200 text-sky-800',
+      violet: isCompleted ? 'bg-violet-200 border-violet-300 text-violet-900 line-through opacity-75' : 'bg-violet-100 border-violet-200 text-violet-800',
+      fuchsia: isCompleted ? 'bg-fuchsia-200 border-fuchsia-300 text-fuchsia-900 line-through opacity-75' : 'bg-fuchsia-100 border-fuchsia-200 text-fuchsia-800',
+      rose: isCompleted ? 'bg-rose-200 border-rose-300 text-rose-900 line-through opacity-75' : 'bg-rose-100 border-rose-200 text-rose-800',
+      slate: isCompleted ? 'bg-slate-200 border-slate-300 text-slate-900 line-through opacity-75' : 'bg-slate-100 border-slate-200 text-slate-800',
+      gray: isCompleted ? 'bg-gray-200 border-gray-300 text-gray-900 line-through opacity-75' : 'bg-gray-100 border-gray-200 text-gray-800',
+      zinc: isCompleted ? 'bg-zinc-200 border-zinc-300 text-zinc-900 line-through opacity-75' : 'bg-zinc-100 border-zinc-200 text-zinc-800',
+      neutral: isCompleted ? 'bg-neutral-200 border-neutral-300 text-neutral-900 line-through opacity-75' : 'bg-neutral-100 border-neutral-200 text-neutral-800',
+      stone: isCompleted ? 'bg-stone-200 border-stone-300 text-stone-900 line-through opacity-75' : 'bg-stone-100 border-stone-200 text-stone-800',
+      amber: isCompleted ? 'bg-amber-200 border-amber-300 text-amber-900 line-through opacity-75' : 'bg-amber-100 border-amber-200 text-amber-800',
     }
     return colorMap[category?.color as keyof typeof colorMap] || (isCompleted ? 'bg-gray-200 border-gray-300 text-gray-900 line-through opacity-75' : 'bg-gray-100 border-gray-200 text-gray-800')
   }
@@ -171,25 +202,30 @@ export default function WeekView({
                   {timeSlots.map((slot) => {
                     const slotTasks = dayTasks[slot.hour] || []
                     const isCurrentHour = new Date().getHours() === slot.hour && isToday
+                    const isOccupied = isTimeSlotOccupied(day, slot.hour)
 
                     return (
                       <div
                         key={slot.hour}
-                        className={`h-16 border-b border-gray-100 relative group cursor-pointer ${
-                          isCurrentHour ? 'bg-blue-50' : 'hover:bg-gray-50'
+                        className={`h-16 border-b border-gray-100 relative group ${
+                          isOccupied 
+                            ? 'bg-gray-100 cursor-not-allowed' 
+                            : `cursor-pointer ${isCurrentHour ? 'bg-blue-50' : 'hover:bg-gray-50'}`
                         }`}
-                        onClick={(e) => onAddTask(day, e, slot.time)}
+                        onClick={isOccupied ? undefined : (e) => onAddTask(day, e, slot.time)}
                       >
-                        {/* Add Task Button */}
-                        <button
-                          className="opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onAddTask(day, e, slot.time)
-                          }}
-                        >
-                          <Plus className="w-4 h-4 text-gray-400" />
-                        </button>
+                        {/* Add Button - only show if not occupied */}
+                        {!isOccupied && (
+                          <button
+                            className="opacity-0 group-hover:opacity-100 absolute inset-0 flex items-center justify-center transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAddTask(day, e, slot.time)
+                            }}
+                          >
+                            <Plus className="w-4 h-4 text-gray-400" />
+                          </button>
+                        )}
 
                         {/* Tasks in this time slot */}
                         <div className="absolute inset-0 p-1 space-y-1">
@@ -197,7 +233,9 @@ export default function WeekView({
                             const category = categories.find(cat => cat.id === task.categoryId)
                             const duration = getTaskDuration(task)
                             const position = getTaskPosition(task)
-                            const height = `${(duration * 100) / 1}%` // 100% per hour
+                            
+                            // Calculate height based on duration (each hour is 64px)
+                            const height = `${duration * 64}px`
                             const top = `${position}%`
 
                             return (
@@ -206,8 +244,9 @@ export default function WeekView({
                                 className={`absolute left-1 right-1 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.isCompleted)}`}
                                 style={{
                                   top,
-                                  height: height === '100%' ? 'calc(100% - 4px)' : height,
-                                  minHeight: '20px'
+                                  height,
+                                  minHeight: '20px',
+                                  zIndex: 10 // Ensure tasks appear above the background
                                 }}
                                 onClick={(e) => onTaskClick(task, e)}
                               >

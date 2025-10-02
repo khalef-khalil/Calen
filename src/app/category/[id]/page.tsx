@@ -5,9 +5,11 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft, Clock, TrendingUp, BarChart3, Plus, Edit, Trash2, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useCategories } from '@/contexts/CategoryContext'
+import { useSettings } from '@/contexts/SettingsContext'
 import { Task, Subcategory } from '@/types/category'
 import DualProgressRing from '@/components/DualProgressRing'
 import { getCategoryColor, COMPLETION_COLOR } from '@/lib/category-colors'
+import CategorySkeleton from '@/components/CategorySkeleton'
 
 interface CategoryStats {
   totalHours: number
@@ -30,9 +32,11 @@ export default function CategoryDashboard() {
   const params = useParams()
   const categoryId = params.id as string
   const { categories, subcategories, createSubcategory, updateSubcategory, deleteSubcategory } = useCategories()
+  const { settings } = useSettings()
   const [tasks, setTasks] = useState<Task[]>([])
   const [stats, setStats] = useState<CategoryStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false)
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false)
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null)
   const [newSubcategoryName, setNewSubcategoryName] = useState('')
@@ -43,6 +47,13 @@ export default function CategoryDashboard() {
   useEffect(() => {
     if (categoryId) {
       loadTasks()
+      
+      // Set minimum loading duration
+      const minLoadingTimer = setTimeout(() => {
+        setMinLoadingComplete(true)
+      }, 1000)
+      
+      return () => clearTimeout(minLoadingTimer)
     }
   }, [categoryId])
 
@@ -122,7 +133,15 @@ export default function CategoryDashboard() {
   const calculateStats = (tasks: Task[]) => {
     if (!category) return
 
-    const totalHours = tasks.reduce((total, task) => {
+    const now = new Date()
+    
+    // Filter to only tasks that have passed their scheduled time
+    const passedTasks = tasks.filter(task => {
+      const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+      return taskEndTime <= now
+    })
+
+    const totalHours = passedTasks.reduce((total, task) => {
       if (task.endTime) {
         const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
         return total + duration
@@ -130,7 +149,7 @@ export default function CategoryDashboard() {
       return total + 1 // Si pas d'heure de fin, compter 1 heure
     }, 0)
 
-    const completedHours = tasks
+    const completedHours = passedTasks
       .filter(task => task.isCompleted)
       .reduce((total, task) => {
         if (task.endTime) {
@@ -145,9 +164,11 @@ export default function CategoryDashboard() {
     const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
 
     let status: 'good' | 'warning' | 'critical' = 'good'
-    if (weeklyGoal > 0) {
-      if (percentage < 50) status = 'critical'
-      else if (percentage < 80) status = 'warning'
+    // New logic: Alert based on completion rate, not weekly goals
+    if (totalHours > 0) {
+      if (completionRate < settings.completionThreshold) {
+        status = 'critical'
+      }
     }
 
     // Calculate subcategory stats
@@ -155,7 +176,14 @@ export default function CategoryDashboard() {
       .filter(sub => sub.categoryId === categoryId)
       .map(sub => {
         const subTasks = tasks.filter(task => task.subcategoryId === sub.id)
-        const hours = subTasks.reduce((total, task) => {
+        
+        // Filter to only tasks that have passed their scheduled time
+        const passedSubTasks = subTasks.filter(task => {
+          const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+          return taskEndTime <= now
+        })
+        
+        const hours = passedSubTasks.reduce((total, task) => {
           if (task.endTime) {
             const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
             return total + duration
@@ -163,7 +191,7 @@ export default function CategoryDashboard() {
           return total + 1
         }, 0)
         
-        const subCompletedHours = subTasks
+        const subCompletedHours = passedSubTasks
           .filter(task => task.isCompleted)
           .reduce((total, task) => {
             if (task.endTime) {
@@ -208,15 +236,8 @@ export default function CategoryDashboard() {
   }
 
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    )
+  if (loading || !minLoadingComplete) {
+    return <CategorySkeleton />
   }
 
   if (!category) {
@@ -264,7 +285,7 @@ export default function CategoryDashboard() {
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Task
+            Add
           </Link>
         </div>
       </div>

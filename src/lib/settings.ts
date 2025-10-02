@@ -10,6 +10,7 @@ export interface AppSettings {
   weeklyGoals: LifeAspectGoals
   minimumDataDays: number // Minimum days of data before showing alerts
   showAlerts: boolean
+  completionThreshold: number // Minimum completion rate to avoid alerts (0-100)
 }
 
 export const DEFAULT_GOALS: LifeAspectGoals = {
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   weeklyGoals: DEFAULT_GOALS,
   minimumDataDays: 3,
   showAlerts: true,
+  completionThreshold: 80,
 }
 
 export const saveSettings = (settings: AppSettings): void => {

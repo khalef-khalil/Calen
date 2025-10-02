@@ -7,14 +7,28 @@ import { useCategories } from '@/contexts/CategoryContext'
 import { CreateCategoryData } from '@/types/category'
 
 const COLOR_OPTIONS = [
-  { name: 'Bleu', value: 'blue', bg: 'bg-blue-500', text: 'text-blue-700' },
-  { name: 'Vert', value: 'green', bg: 'bg-green-500', text: 'text-green-700' },
-  { name: 'Violet', value: 'purple', bg: 'bg-purple-500', text: 'text-purple-700' },
+  { name: 'Blue', value: 'blue', bg: 'bg-blue-500', text: 'text-blue-700' },
+  { name: 'Green', value: 'green', bg: 'bg-green-500', text: 'text-green-700' },
+  { name: 'Purple', value: 'purple', bg: 'bg-purple-500', text: 'text-purple-700' },
   { name: 'Orange', value: 'orange', bg: 'bg-orange-500', text: 'text-orange-700' },
-  { name: 'Rose', value: 'pink', bg: 'bg-pink-500', text: 'text-pink-700' },
-  { name: 'Rouge', value: 'red', bg: 'bg-red-500', text: 'text-red-700' },
+  { name: 'Pink', value: 'pink', bg: 'bg-pink-500', text: 'text-pink-700' },
+  { name: 'Red', value: 'red', bg: 'bg-red-500', text: 'text-red-700' },
   { name: 'Indigo', value: 'indigo', bg: 'bg-indigo-500', text: 'text-indigo-700' },
   { name: 'Teal', value: 'teal', bg: 'bg-teal-500', text: 'text-teal-700' },
+  { name: 'Yellow', value: 'yellow', bg: 'bg-yellow-500', text: 'text-yellow-700' },
+  { name: 'Lime', value: 'lime', bg: 'bg-lime-500', text: 'text-lime-700' },
+  { name: 'Emerald', value: 'emerald', bg: 'bg-emerald-500', text: 'text-emerald-700' },
+  { name: 'Cyan', value: 'cyan', bg: 'bg-cyan-500', text: 'text-cyan-700' },
+  { name: 'Sky', value: 'sky', bg: 'bg-sky-500', text: 'text-sky-700' },
+  { name: 'Violet', value: 'violet', bg: 'bg-violet-500', text: 'text-violet-700' },
+  { name: 'Fuchsia', value: 'fuchsia', bg: 'bg-fuchsia-500', text: 'text-fuchsia-700' },
+  { name: 'Rose', value: 'rose', bg: 'bg-rose-500', text: 'text-rose-700' },
+  { name: 'Slate', value: 'slate', bg: 'bg-slate-500', text: 'text-slate-700' },
+  { name: 'Gray', value: 'gray', bg: 'bg-gray-500', text: 'text-gray-700' },
+  { name: 'Zinc', value: 'zinc', bg: 'bg-zinc-500', text: 'text-zinc-700' },
+  { name: 'Neutral', value: 'neutral', bg: 'bg-neutral-500', text: 'text-neutral-700' },
+  { name: 'Stone', value: 'stone', bg: 'bg-stone-500', text: 'text-stone-700' },
+  { name: 'Amber', value: 'amber', bg: 'bg-amber-500', text: 'text-amber-700' },
 ]
 
 const ICON_OPTIONS = [
@@ -67,8 +81,8 @@ export default function SetupPage() {
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">Configuration initiale</h1>
-            <span className="text-sm text-gray-500">Étape {currentStep}/2</span>
+            <h1 className="text-3xl font-bold text-gray-900">Initial Setup</h1>
+            <span className="text-sm text-gray-500">Step {currentStep}/2</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
@@ -82,45 +96,45 @@ export default function SetupPage() {
         {currentStep === 1 && (
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Créez vos catégories de vie
+              Create Your Life Categories
             </h2>
             <p className="text-gray-600 mb-6">
-              Définissez les aspects de votre vie que vous souhaitez suivre. 
-              Vous devez créer au moins 2 catégories pour commencer.
+              Define the aspects of your life you want to track. 
+              You need to create at least 2 categories to get started.
             </p>
 
             {/* Category Form */}
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom de la catégorie *
+                  Category Name *
                 </label>
                 <input
                   type="text"
                   value={newCategory.name}
                   onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="ex: Travail, Études, Sport..."
+                  placeholder="e.g: Work, Studies, Fitness..."
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description (optionnel)
+                  Description (optional)
                 </label>
                 <input
                   type="text"
                   value={newCategory.description || ''}
                   onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Description de cette catégorie..."
+                  placeholder="Description of this category..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Icône
+                    Icon
                   </label>
                   <div className="grid grid-cols-5 gap-2">
                     {ICON_OPTIONS.map(icon => (
@@ -141,9 +155,9 @@ export default function SetupPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Couleur
+                    Color
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                     {COLOR_OPTIONS.map(color => (
                       <button
                         key={color.value}
@@ -164,7 +178,7 @@ export default function SetupPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Objectif hebdomadaire (heures)
+                  Weekly Goal (hours)
                 </label>
                 <input
                   type="number"
@@ -182,14 +196,14 @@ export default function SetupPage() {
                 className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {isCreating ? 'Création...' : 'Ajouter la catégorie'}
+                {isCreating ? 'Creating...' : 'Add Category'}
               </button>
             </div>
 
             {/* Created Categories */}
             {categories.length > 0 && (
               <div className="border-t pt-6">
-                <h3 className="font-medium text-gray-900 mb-4">Catégories créées ({categories.length})</h3>
+                <h3 className="font-medium text-gray-900 mb-4">Created Categories ({categories.length})</h3>
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -208,7 +222,7 @@ export default function SetupPage() {
                         } ${
                           COLOR_OPTIONS.find(c => c.value === category.color)?.bg
                         } bg-opacity-20`}>
-                          {category.weeklyGoal}h/semaine
+                          {category.weeklyGoal}h/week
                         </span>
                       </div>
                     </div>
@@ -223,7 +237,7 @@ export default function SetupPage() {
                 disabled={!canProceed}
                 className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Continuer
+                Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>
@@ -238,10 +252,10 @@ export default function SetupPage() {
                 <Check className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                Configuration terminée !
+                Setup Complete!
               </h2>
               <p className="text-gray-600">
-                Vous avez créé {categories.length} catégorie{categories.length > 1 ? 's' : ''} pour organiser votre vie.
+                You've created {categories.length} categor{categories.length > 1 ? 'ies' : 'y'} to organize your life.
               </p>
             </div>
 
@@ -256,7 +270,7 @@ export default function SetupPage() {
                     )}
                   </div>
                   <span className="text-sm text-gray-500">
-                    {category.weeklyGoal}h/semaine
+                    {category.weeklyGoal}h/week
                   </span>
                 </div>
               ))}
@@ -267,7 +281,7 @@ export default function SetupPage() {
                 onClick={handleFinish}
                 className="flex items-center justify-center px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mx-auto"
               >
-                Commencer à utiliser l'application
+                Start Using the Application
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { 
@@ -13,6 +13,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { useCategories } from '@/contexts/CategoryContext'
+import SidebarSkeleton from './SidebarSkeleton'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
@@ -22,8 +23,23 @@ const navigation = [
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false)
   const pathname = usePathname()
-  const { categories } = useCategories()
+  const { categories, loading } = useCategories()
+
+  // Set minimum loading duration
+  useEffect(() => {
+    const minLoadingTimer = setTimeout(() => {
+      setMinLoadingComplete(true)
+    }, 1000)
+    
+    return () => clearTimeout(minLoadingTimer)
+  }, [])
+
+  // Show skeleton while loading
+  if (loading || !minLoadingComplete) {
+    return <SidebarSkeleton />
+  }
 
   const getCategoryColorClasses = (color: string) => {
     const colorMap = {
@@ -35,6 +51,20 @@ export default function Sidebar() {
       red: 'text-red-300 hover:bg-gray-800 hover:text-red-200',
       indigo: 'text-indigo-300 hover:bg-gray-800 hover:text-indigo-200',
       teal: 'text-teal-300 hover:bg-gray-800 hover:text-teal-200',
+      yellow: 'text-yellow-300 hover:bg-gray-800 hover:text-yellow-200',
+      lime: 'text-lime-300 hover:bg-gray-800 hover:text-lime-200',
+      emerald: 'text-emerald-300 hover:bg-gray-800 hover:text-emerald-200',
+      cyan: 'text-cyan-300 hover:bg-gray-800 hover:text-cyan-200',
+      sky: 'text-sky-300 hover:bg-gray-800 hover:text-sky-200',
+      violet: 'text-violet-300 hover:bg-gray-800 hover:text-violet-200',
+      fuchsia: 'text-fuchsia-300 hover:bg-gray-800 hover:text-fuchsia-200',
+      rose: 'text-rose-300 hover:bg-gray-800 hover:text-rose-200',
+      slate: 'text-slate-300 hover:bg-gray-800 hover:text-slate-200',
+      gray: 'text-gray-300 hover:bg-gray-800 hover:text-gray-200',
+      zinc: 'text-zinc-300 hover:bg-gray-800 hover:text-zinc-200',
+      neutral: 'text-neutral-300 hover:bg-gray-800 hover:text-neutral-200',
+      stone: 'text-stone-300 hover:bg-gray-800 hover:text-stone-200',
+      amber: 'text-amber-300 hover:bg-gray-800 hover:text-amber-200',
     }
     return colorMap[color as keyof typeof colorMap] || 'text-gray-300 hover:bg-gray-800 hover:text-gray-200'
   }

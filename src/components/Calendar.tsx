@@ -209,6 +209,20 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                             red: task.isCompleted ? 'bg-red-200 text-red-900 line-through opacity-75' : 'bg-red-100 text-red-800 hover:bg-red-200',
                             indigo: task.isCompleted ? 'bg-indigo-200 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
                             teal: task.isCompleted ? 'bg-teal-200 text-teal-900 line-through opacity-75' : 'bg-teal-100 text-teal-800 hover:bg-teal-200',
+                            yellow: task.isCompleted ? 'bg-yellow-200 text-yellow-900 line-through opacity-75' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+                            lime: task.isCompleted ? 'bg-lime-200 text-lime-900 line-through opacity-75' : 'bg-lime-100 text-lime-800 hover:bg-lime-200',
+                            emerald: task.isCompleted ? 'bg-emerald-200 text-emerald-900 line-through opacity-75' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
+                            cyan: task.isCompleted ? 'bg-cyan-200 text-cyan-900 line-through opacity-75' : 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200',
+                            sky: task.isCompleted ? 'bg-sky-200 text-sky-900 line-through opacity-75' : 'bg-sky-100 text-sky-800 hover:bg-sky-200',
+                            violet: task.isCompleted ? 'bg-violet-200 text-violet-900 line-through opacity-75' : 'bg-violet-100 text-violet-800 hover:bg-violet-200',
+                            fuchsia: task.isCompleted ? 'bg-fuchsia-200 text-fuchsia-900 line-through opacity-75' : 'bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200',
+                            rose: task.isCompleted ? 'bg-rose-200 text-rose-900 line-through opacity-75' : 'bg-rose-100 text-rose-800 hover:bg-rose-200',
+                            slate: task.isCompleted ? 'bg-slate-200 text-slate-900 line-through opacity-75' : 'bg-slate-100 text-slate-800 hover:bg-slate-200',
+                            gray: task.isCompleted ? 'bg-gray-200 text-gray-900 line-through opacity-75' : 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+                            zinc: task.isCompleted ? 'bg-zinc-200 text-zinc-900 line-through opacity-75' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200',
+                            neutral: task.isCompleted ? 'bg-neutral-200 text-neutral-900 line-through opacity-75' : 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200',
+                            stone: task.isCompleted ? 'bg-stone-200 text-stone-900 line-through opacity-75' : 'bg-stone-100 text-stone-800 hover:bg-stone-200',
+                            amber: task.isCompleted ? 'bg-amber-200 text-amber-900 line-through opacity-75' : 'bg-amber-100 text-amber-800 hover:bg-amber-200',
                           }
                           return (
                             <div
@@ -252,6 +266,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
             tasks={tasksByDate[selectedDate.toISOString().split('T')[0]] || []}
             onTaskClick={handleTaskClick}
             onAddTask={handleAddTask}
+            onClose={() => setSelectedDate(null)}
           />
         </div>
       )}
