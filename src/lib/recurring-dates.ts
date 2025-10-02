@@ -24,8 +24,10 @@ export function generateRecurringDates(settings: RecurringTaskSettings): Date[] 
   endDate.setMonth(endDate.getMonth() + duration)
   
   let currentDate = new Date(startDate)
+  let occurrenceCount = 0
+  const maxOccurrences = 1000 // Safety limit to prevent infinite loops
   
-  while (currentDate <= endDate) {
+  while (currentDate <= endDate && occurrenceCount < maxOccurrences) {
     let shouldIncludeDate = false
     
     switch (frequency) {
@@ -54,21 +56,39 @@ export function generateRecurringDates(settings: RecurringTaskSettings): Date[] 
     
     if (shouldIncludeDate) {
       dates.push(new Date(currentDate))
+      occurrenceCount++
     }
     
-    // Move to next occurrence
+    // Move to next day for daily, or next occurrence for others
     switch (frequency) {
       case 'daily':
         currentDate = addDays(currentDate, 1)
         break
       case 'weekly':
-        currentDate = addWeeks(currentDate, 1)
+        // For weekly, find the next occurrence of the same day of week
+        if (dayOfWeek !== undefined) {
+          const daysUntilNext = (dayOfWeek - getDay(currentDate) + 7) % 7
+          currentDate = addDays(currentDate, daysUntilNext === 0 ? 7 : daysUntilNext)
+        } else {
+          currentDate = addWeeks(currentDate, 1)
+        }
         break
       case 'biweekly':
-        currentDate = addWeeks(currentDate, 2)
+        // For biweekly, find the next occurrence of the same day of week (2 weeks later)
+        if (dayOfWeek !== undefined) {
+          const daysUntilNext = (dayOfWeek - getDay(currentDate) + 7) % 7
+          currentDate = addDays(currentDate, daysUntilNext === 0 ? 14 : daysUntilNext)
+        } else {
+          currentDate = addWeeks(currentDate, 2)
+        }
         break
       case 'monthly':
-        currentDate = addMonths(currentDate, 1)
+        // For monthly, find the next occurrence of the same day of month
+        if (dayOfMonth !== undefined) {
+          currentDate = addMonths(currentDate, 1)
+        } else {
+          currentDate = addMonths(currentDate, 1)
+        }
         break
     }
   }

@@ -50,11 +50,12 @@ export default function CalendarPage() {
     try {
       setLoading(true)
       const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      // Load a wider range to include recurring tasks that span multiple months
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1) // Start from previous month
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0) // End 3 months from now
 
       const response = await fetch(
-        `/api/tasks?startDate=${startOfMonth.toISOString()}&endDate=${endOfMonth.toISOString()}`
+        `/api/tasks?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
       )
       
       if (response.ok) {
