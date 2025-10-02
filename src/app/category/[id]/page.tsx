@@ -135,19 +135,20 @@ export default function CategoryDashboard() {
 
     const now = new Date()
     
-    // Filter to only tasks that have passed their scheduled time
-    const passedTasks = tasks.filter(task => {
-      const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
-      return taskEndTime <= now
-    })
-
-    const totalHours = passedTasks.reduce((total, task) => {
+    // Calculate total planned hours for ALL tasks in the current week
+    const totalHours = tasks.reduce((total, task) => {
       if (task.endTime) {
         const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
         return total + duration
       }
       return total + 1 // Si pas d'heure de fin, compter 1 heure
     }, 0)
+
+    // Filter to only tasks that have passed their scheduled time for completion calculation
+    const passedTasks = tasks.filter(task => {
+      const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+      return taskEndTime <= now
+    })
 
     const completedHours = passedTasks
       .filter(task => task.isCompleted)
@@ -161,11 +162,21 @@ export default function CategoryDashboard() {
 
     const weeklyGoal = category.weeklyGoal
     const percentage = weeklyGoal > 0 ? (totalHours / weeklyGoal) * 100 : 0
-    const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
+    
+    // Calculate completion rate based on passed tasks only (for alerts)
+    const passedTasksTotalHours = passedTasks.reduce((total, task) => {
+      if (task.endTime) {
+        const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
+        return total + duration
+      }
+      return total + 1 // If no end time, count 1 hour
+    }, 0)
+    
+    const completionRate = passedTasksTotalHours > 0 ? (completedHours / passedTasksTotalHours) * 100 : 0
 
     let status: 'good' | 'warning' | 'critical' = 'good'
-    // New logic: Alert based on completion rate, not weekly goals
-    if (totalHours > 0) {
+    // Alert logic: Only consider passed tasks for completion rate
+    if (passedTasksTotalHours > 0) {
       if (completionRate < settings.completionThreshold) {
         status = 'critical'
       }
@@ -177,19 +188,20 @@ export default function CategoryDashboard() {
       .map(sub => {
         const subTasks = tasks.filter(task => task.subcategoryId === sub.id)
         
-        // Filter to only tasks that have passed their scheduled time
-        const passedSubTasks = subTasks.filter(task => {
-          const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
-          return taskEndTime <= now
-        })
-        
-        const hours = passedSubTasks.reduce((total, task) => {
+        // Calculate total planned hours for ALL tasks in this subcategory
+        const hours = subTasks.reduce((total, task) => {
           if (task.endTime) {
             const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
             return total + duration
           }
           return total + 1
         }, 0)
+        
+        // Filter to only tasks that have passed their scheduled time for completion calculation
+        const passedSubTasks = subTasks.filter(task => {
+          const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+          return taskEndTime <= now
+        })
         
         const subCompletedHours = passedSubTasks
           .filter(task => task.isCompleted)

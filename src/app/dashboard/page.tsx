@@ -91,20 +91,20 @@ export default function Dashboard() {
     const stats: TimeStats[] = categories.map(category => {
       const categoryTasks = tasks.filter(task => task.categoryId === category.id)
       
-      // Filter to only tasks that have passed their scheduled time
-      const passedTasks = categoryTasks.filter(task => {
-        const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
-        return taskEndTime <= now
-      })
-      
-      // Calculate total planned hours for passed tasks only
-      const totalHours = passedTasks.reduce((total, task) => {
+      // Calculate total planned hours for ALL tasks in the current week
+      const totalHours = categoryTasks.reduce((total, task) => {
         if (task.endTime) {
           const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
           return total + duration
         }
         return total + 1 // If no end time, count 1 hour
       }, 0)
+
+      // Filter to only tasks that have passed their scheduled time for completion calculation
+      const passedTasks = categoryTasks.filter(task => {
+        const taskEndTime = task.endTime || new Date(task.startTime.getTime() + 60 * 60 * 1000) // Default 1 hour if no end time
+        return taskEndTime <= now
+      })
 
       // Calculate completed hours for passed tasks only
       const completedHours = passedTasks
@@ -119,11 +119,21 @@ export default function Dashboard() {
 
       const recommended = category.weeklyGoal
       const percentage = recommended > 0 ? (totalHours / recommended) * 100 : 0
-      const completionRate = totalHours > 0 ? (completedHours / totalHours) * 100 : 0
+      
+      // Calculate completion rate based on passed tasks only (for alerts)
+      const passedTasksTotalHours = passedTasks.reduce((total, task) => {
+        if (task.endTime) {
+          const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
+          return total + duration
+        }
+        return total + 1 // If no end time, count 1 hour
+      }, 0)
+      
+      const completionRate = passedTasksTotalHours > 0 ? (completedHours / passedTasksTotalHours) * 100 : 0
 
       let status: 'good' | 'warning' | 'critical' = 'good'
-      // New logic: Alert based on completion rate, not weekly goals
-      if (totalHours > 0) {
+      // Alert logic: Only consider passed tasks for completion rate
+      if (passedTasksTotalHours > 0) {
         if (completionRate < settings.completionThreshold) {
           status = 'critical'
         }

@@ -52,6 +52,16 @@ export default function SetupPage() {
   const handleCreateCategory = async () => {
     if (!newCategory.name.trim()) return
 
+    // Calculate what the total would be with this new category
+    const currentTotal = categories.reduce((sum, cat) => sum + cat.weeklyGoal, 0)
+    const newTotal = currentTotal + newCategory.weeklyGoal
+
+    // Validate that total doesn't exceed 120 hours
+    if (newTotal > 120) {
+      alert(`Total weekly hours cannot exceed 120. Current total would be ${newTotal}h. Please reduce the weekly goal for this category.`)
+      return
+    }
+
     try {
       setIsCreating(true)
       await createCategory(newCategory)
@@ -183,11 +193,22 @@ export default function SetupPage() {
                 <input
                   type="number"
                   value={newCategory.weeklyGoal}
-                  onChange={(e) => setNewCategory(prev => ({ ...prev, weeklyGoal: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0
+                    const currentTotal = categories.reduce((sum, cat) => sum + cat.weeklyGoal, 0)
+                    const maxAllowed = 120 - currentTotal
+                    setNewCategory(prev => ({ 
+                      ...prev, 
+                      weeklyGoal: Math.min(value, maxAllowed) 
+                    }))
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
-                  max="168"
+                  max={120 - categories.reduce((sum, cat) => sum + cat.weeklyGoal, 0)}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Max: {120 - categories.reduce((sum, cat) => sum + cat.weeklyGoal, 0)}h (120h total limit)
+                </p>
               </div>
 
               <button

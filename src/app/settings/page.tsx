@@ -14,6 +14,18 @@ export default function SettingsPage() {
   const [newGoal, setNewGoal] = useState<number>(0)
 
   const handleGoalUpdate = async (categoryId: string, newGoal: number) => {
+    // Calculate what the total would be with this change
+    const otherCategoriesTotal = categories
+      .filter(cat => cat.id !== categoryId)
+      .reduce((sum, cat) => sum + cat.weeklyGoal, 0)
+    const newTotal = otherCategoriesTotal + newGoal
+
+    // Validate that total doesn't exceed 120 hours
+    if (newTotal > 120) {
+      alert(`Total weekly hours cannot exceed 120. Current total would be ${newTotal}h. Please reduce the goal or other categories first.`)
+      return
+    }
+
     try {
       setIsSaving(true)
       await updateCategory(categoryId, { weeklyGoal: newGoal })
@@ -90,10 +102,17 @@ export default function SettingsPage() {
                         <input
                           type="number"
                           value={newGoal}
-                          onChange={(e) => setNewGoal(parseInt(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0
+                            const otherCategoriesTotal = categories
+                              .filter(cat => cat.id !== categoryId)
+                              .reduce((sum, cat) => sum + cat.weeklyGoal, 0)
+                            const maxAllowed = 120 - otherCategoriesTotal
+                            setNewGoal(Math.min(value, maxAllowed))
+                          }}
                           className="w-20 text-center border border-gray-300 rounded px-2 py-1"
                           min="0"
-                          max="168"
+                          max={120 - categories.filter(cat => cat.id !== categoryId).reduce((sum, cat) => sum + cat.weeklyGoal, 0)}
                         />
                         <button
                           onClick={() => handleGoalUpdate(category.id, newGoal)}
@@ -156,22 +175,54 @@ export default function SettingsPage() {
 
           {/* Summary */}
           {categories.length > 0 && (
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className={`rounded-lg p-4 ${
+              totalHours > 120 
+                ? 'bg-red-50 border border-red-200' 
+                : totalHours > 100 
+                  ? 'bg-yellow-50 border border-yellow-200'
+                  : 'bg-blue-50 border border-blue-200'
+            }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-blue-900">Weekly Total</h3>
-                  <p className="text-sm text-blue-700">
+                  <h3 className={`font-medium ${
+                    totalHours > 120 ? 'text-red-900' : 'text-blue-900'
+                  }`}>
+                    Weekly Total
+                  </h3>
+                  <p className={`text-sm ${
+                    totalHours > 120 ? 'text-red-700' : 'text-blue-700'
+                  }`}>
                     {totalHours} hours per week
-                    {totalHours > 168 && (
-                      <span className="text-red-600 ml-2">
-                        (More than 168h available)
+                    {totalHours > 120 && (
+                      <span className="text-red-600 ml-2 font-semibold">
+                        (Exceeds 120h limit!)
+                      </span>
+                    )}
+                    {totalHours <= 120 && totalHours > 100 && (
+                      <span className="text-yellow-600 ml-2">
+                        (Close to 120h limit)
                       </span>
                     )}
                   </p>
                 </div>
-                <div className="text-2xl font-bold text-blue-900">
+                <div className={`text-2xl font-bold ${
+                  totalHours > 120 ? 'text-red-900' : 'text-blue-900'
+                }`}>
                   {totalHours}h
                 </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      totalHours > 120 ? 'bg-red-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min((totalHours / 120) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  {120 - totalHours} hours remaining
+                </p>
               </div>
             </div>
           )}
