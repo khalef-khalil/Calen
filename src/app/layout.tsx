@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Calendrier de Productivité",
+  title: "Calen",
   description: "Application de gestion du temps et de planification des tâches",
   icons: {
     icon: "/favicon.svg",

@@ -102,7 +102,7 @@ export default function Sidebar() {
               <Calendar className="w-6 h-6 text-gray-300" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Life Manager</h1>
+              <h1 className="text-xl font-bold text-white">Calen</h1>
               <p className="text-xs text-gray-400">Life Management</p>
             </div>
           </div>

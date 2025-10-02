@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 8000",
+    "dev": "npm run stop && next dev -p 8000 & sleep 3 && open http://localhost:8000",
     "dev:clean": "./scripts/dev.sh",
     "stop": "./scripts/stop.sh",
     "build": "next build",

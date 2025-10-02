@@ -11,7 +11,7 @@ export default function SidebarSkeleton() {
       {/* Desktop sidebar skeleton */}
       <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50">
         <div className="flex flex-col flex-grow bg-gray-900 pt-5 pb-4 overflow-y-auto">
-          {/* Header skeleton - Life Manager */}
+          {/* Header skeleton - Calen */}
           <div className="flex items-center flex-shrink-0 px-4 mb-8">
             <div className="w-8 h-8 bg-gray-700 rounded-lg animate-pulse"></div>
             <div className="ml-3">
