@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId } = body
 
+    console.log('Creating task with data:', { title, categoryId, subcategoryId, isRecurring })
+
     if (!title || !startTime || !date || !categoryId) {
+      console.log('Validation failed:', { title: !!title, startTime: !!startTime, date: !!date, categoryId: !!categoryId })
       return NextResponse.json({ error: 'Titre, heure de début, date et catégorie requis' }, { status: 400 })
     }
 
@@ -68,6 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(task, { status: 201 })
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('Task data that failed:', { title, categoryId, subcategoryId, isRecurring })
+    return NextResponse.json({ error: `Erreur serveur: ${error.message}` }, { status: 500 })
   }
 }

@@ -10,7 +10,12 @@ export const generateRecurringTasks = (
   const tasks = []
   let currentDate = new Date(startDate)
 
-  while (currentDate <= endDate) {
+  // Check if the recurring task has an end date and respect it
+  const effectiveEndDate = recurringTask.endDate 
+    ? new Date(Math.min(endDate.getTime(), recurringTask.endDate.getTime()))
+    : endDate
+
+  while (currentDate <= effectiveEndDate) {
     let shouldCreateTask = false
 
     switch (recurringTask.frequency) {

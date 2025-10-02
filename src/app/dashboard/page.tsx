@@ -6,6 +6,7 @@ import { Task } from '@/types/category'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useCategories } from '@/contexts/CategoryContext'
 import Link from 'next/link'
+import ProgressRing from '@/components/ProgressRing'
 
 interface TimeStats {
   categoryId: string
@@ -139,7 +140,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement du tableau de bord...</p>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -152,8 +153,8 @@ export default function Dashboard() {
         <div className="flex items-center space-x-3">
           <BarChart3 className="w-8 h-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
-            <p className="text-gray-600">Vue d'ensemble de votre équilibre de vie</p>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Overview of your life balance - manage categories and their subcategories</p>
           </div>
         </div>
         <Link
@@ -161,7 +162,7 @@ export default function Dashboard() {
           className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           <Settings className="w-4 h-4 mr-2" />
-          Paramètres
+          Settings
         </Link>
       </div>
 
@@ -171,101 +172,103 @@ export default function Dashboard() {
           <div className="flex items-start space-x-3">
             <Clock className="w-5 h-5 text-blue-500 mt-0.5" />
             <div>
-              <h3 className="font-medium text-blue-800">Données insuffisantes</h3>
+              <h3 className="font-medium text-blue-800">Insufficient data</h3>
               <p className="text-sm text-blue-600 mt-1">
-                Vous avez besoin d'au moins {settings.minimumDataDays} jours de données pour voir les analyses détaillées. 
-                Commencez par ajouter quelques tâches dans le calendrier.
+                You need at least {settings.minimumDataDays} days of data to see detailed analysis. 
+                Start by adding some tasks in the calendar.
               </p>
               <Link
                 href="/calendar"
                 className="inline-flex items-center mt-2 text-sm text-blue-700 hover:text-blue-800 font-medium"
               >
                 <Calendar className="w-4 h-4 mr-1" />
-                Aller au calendrier
+                Go to calendar
               </Link>
             </div>
           </div>
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {timeStats.map((stat) => {
-          const colorClasses = {
-            blue: 'text-blue-600 bg-blue-100',
-            green: 'text-green-600 bg-green-100',
-            purple: 'text-purple-600 bg-purple-100',
-            orange: 'text-orange-600 bg-orange-100',
-            pink: 'text-pink-600 bg-pink-100',
-            red: 'text-red-600 bg-red-100',
-            indigo: 'text-indigo-600 bg-indigo-100',
-            teal: 'text-teal-600 bg-teal-100',
-          }
-          
-          return (
-            <Link key={stat.categoryId} href={`/category/${stat.categoryId}`}>
-              <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">{stat.categoryIcon}</div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {stat.categoryName}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {stat.recommended > 0 ? `${stat.recommended}h/semaine` : 'Non configuré'}
-                      </p>
+      {/* Categories Overview - Rings Layout */}
+      <div className="bg-white rounded-lg shadow-sm border p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Weekly Progress</h2>
+          <p className="text-gray-600">Track your life balance with these progress rings</p>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 justify-items-center">
+          {timeStats.map((stat) => {
+            const getRingColor = (status: string) => {
+              switch (status) {
+                case 'good':
+                  return '#10b981' // green-500
+                case 'warning':
+                  return '#f59e0b' // yellow-500
+                case 'critical':
+                  return '#ef4444' // red-500
+                default:
+                  return '#6b7280' // gray-500
+              }
+            }
+
+            return (
+              <Link key={stat.categoryId} href={`/category/${stat.categoryId}`}>
+                <div className="group cursor-pointer">
+                  <ProgressRing
+                    size={180}
+                    strokeWidth={12}
+                    progress={stat.recommended > 0 ? Math.min(stat.percentage, 100) : 0}
+                    color={getRingColor(stat.status)}
+                    label={stat.categoryName}
+                    value={stat.recommended > 0 ? `${stat.hours}h` : '--'}
+                    icon={stat.categoryIcon}
+                    className="group-hover:scale-105 transition-transform duration-200"
+                  />
+                  
+                  {/* Additional info below ring */}
+                  <div className="text-center mt-3">
+                    <div className="text-sm text-gray-600">
+                      {stat.recommended > 0 ? `of ${stat.recommended}h` : 'Not set'}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {stat.recommended > 0 && getStatusIcon(stat.status)}
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                    {stat.recommended > 0 && (
+                      <div className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
+                        stat.status === 'good' ? 'bg-green-100 text-green-700' :
+                        stat.status === 'warning' ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {stat.percentage}%
+                      </div>
+                    )}
                   </div>
                 </div>
+              </Link>
+            )
+          })}
+        </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Cette semaine</span>
-                    <span className="font-medium">
-                      {stat.hours}h {stat.recommended > 0 && `/ ${stat.recommended}h`}
-                    </span>
-                  </div>
-
-                  {stat.recommended > 0 ? (
-                    <>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            stat.status === 'good' ? 'bg-green-500' :
-                            stat.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${Math.min(stat.percentage, 100)}%` }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm px-2 py-1 rounded-full ${getStatusColor(stat.status)}`}>
-                          {stat.percentage}% de l'objectif
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {stat.hours < stat.recommended ? `-${Math.round(stat.recommended - stat.hours)}h` : `+${Math.round(stat.hours - stat.recommended)}h`}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-2">
-                      <p className="text-sm text-gray-500">
-                        <Link href="/settings" className="text-blue-600 hover:text-blue-800">
-                          Configurez vos objectifs
-                        </Link>
-                      </p>
-                    </div>
-                  )}
-                </div>
+        {/* Summary stats */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {timeStats.reduce((sum, stat) => sum + stat.hours, 0)}h
               </div>
-            </Link>
-          )
-        })}
+              <div className="text-sm text-gray-600">Total this week</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {timeStats.filter(stat => stat.status === 'good').length}
+              </div>
+              <div className="text-sm text-gray-600">Categories on track</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {timeStats.filter(stat => stat.recommended > 0).length}
+              </div>
+              <div className="text-sm text-gray-600">Categories configured</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Insights - Only show if we have enough data and alerts are enabled */}
@@ -286,11 +289,11 @@ export default function Dashboard() {
                   <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
                   <div>
                     <p className="font-medium text-red-800">
-                      Attention: {stat.categoryName} négligé
+                      Warning: {stat.categoryName} neglected
                     </p>
                     <p className="text-sm text-red-600">
-                      Vous n'avez consacré que {stat.hours}h à {stat.categoryName.toLowerCase()} cette semaine. 
-                      L'objectif recommandé est de {stat.recommended}h.
+                      You only spent {stat.hours}h on {stat.categoryName.toLowerCase()} this week. 
+                      The recommended goal is {stat.recommended}h.
                     </p>
                   </div>
                 </div>
@@ -301,11 +304,11 @@ export default function Dashboard() {
                   <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5" />
                   <div>
                     <p className="font-medium text-yellow-800">
-                      Attention: {stat.categoryName} sous-représenté
+                      Warning: {stat.categoryName} under-represented
                     </p>
                     <p className="text-sm text-yellow-600">
-                      Vous êtes à {stat.percentage}% de votre objectif pour {stat.categoryName.toLowerCase()}. 
-                      Essayez d'ajouter {Math.ceil(stat.recommended - stat.hours)}h cette semaine.
+                      You are at {stat.percentage}% of your goal for {stat.categoryName.toLowerCase()}. 
+                      Try adding {Math.ceil(stat.recommended - stat.hours)}h this week.
                     </p>
                   </div>
                 </div>
@@ -319,10 +322,10 @@ export default function Dashboard() {
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-green-800">
-                    Excellent équilibre de vie !
+                    Excellent life balance!
                   </p>
                   <p className="text-sm text-green-600">
-                    Vous maintenez un bon équilibre entre tous les aspects de votre vie cette semaine.
+                    You maintain a good balance between all aspects of your life this week.
                   </p>
                 </div>
               </div>
@@ -331,16 +334,16 @@ export default function Dashboard() {
             {timeStats.every(stat => stat.recommended === 0) && (
               <div className="text-center py-8">
                 <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Configurez vos objectifs</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Configure your goals</h3>
                 <p className="text-gray-600 mb-4">
-                  Définissez vos objectifs hebdomadaires pour chaque aspect de votre vie pour voir des insights personnalisés.
+                  Set your weekly goals for each aspect of your life to see personalized insights.
                 </p>
                 <Link
                   href="/settings"
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  Aller aux paramètres
+                  Go to settings
                 </Link>
               </div>
             )}

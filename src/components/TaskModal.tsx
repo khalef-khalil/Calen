@@ -5,6 +5,7 @@ import { X, Trash2 } from 'lucide-react'
 import { createDateTime } from '@/lib/date-utils'
 import { Task } from '@/types/category'
 import { useCategories } from '@/contexts/CategoryContext'
+import { generateRecurringDates, createTaskInstance } from '@/lib/recurring-dates'
 
 interface TaskModalProps {
   task?: Task | null
@@ -17,6 +18,13 @@ interface TaskModalProps {
 
 export default function TaskModal({ task, selectedDate, onSave, onDelete, onClose, triggerPosition }: TaskModalProps) {
   const { categories, subcategories } = useCategories()
+  
+  const durationOptions = [
+    { value: 1, label: '1 month' },
+    { value: 3, label: '3 months' },
+    { value: 6, label: '6 months' },
+    { value: 12, label: '1 year' },
+  ]
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -26,6 +34,11 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
     categoryId: '',
     subcategoryId: '',
     isRecurring: false,
+    // Recurring task fields
+    frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
+    dayOfWeek: 1, // Monday by default
+    dayOfMonth: 1,
+    duration: 12, // Default to 1 year
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -43,12 +56,25 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
         categoryId: task.categoryId || '',
         subcategoryId: task.subcategoryId || '',
         isRecurring: task.isRecurring,
+        // Recurring task fields - these would come from the recurring task if it exists
+        frequency: 'daily',
+        dayOfWeek: 1,
+        dayOfMonth: 1,
+        duration: 12,
       })
     } else if (selectedDate) {
       setFormData(prev => ({
         ...prev,
         date: selectedDate,
         categoryId: categories[0]?.id || '',
+      }))
+    }
+    
+    // Always ensure we have a category selected if categories are available
+    if (categories.length > 0 && !formData.categoryId) {
+      setFormData(prev => ({
+        ...prev,
+        categoryId: categories[0].id
       }))
     }
   }, [task, selectedDate, categories])
@@ -84,25 +110,93 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
     setIsSubmitting(true)
 
     try {
-      const startDateTime = createDateTime(formData.date, formData.startTime)
-      const endDateTime = formData.endTime ? createDateTime(formData.date, formData.endTime) : null
-
-              await onSave({
-                title: formData.title,
-                description: formData.description || null,
-                startTime: startDateTime,
-                endTime: endDateTime,
-                date: formData.date,
-                categoryId: formData.categoryId,
-                subcategoryId: formData.subcategoryId || null,
-                isRecurring: formData.isRecurring,
-                recurringId: null,
-              })
+      console.log('Form submission - formData:', formData)
+      console.log('Available categories:', categories)
       
-      // Fermer avec animation après sauvegarde
+      // Validate required fields
+      if (!formData.categoryId) {
+        throw new Error('Please select a category')
+      }
+
+      if (formData.isRecurring) {
+        // For recurring tasks, generate all instances upfront
+        const recurringSettings = {
+          frequency: formData.frequency,
+          dayOfWeek: formData.frequency === 'weekly' ? formData.dayOfWeek : undefined,
+          dayOfMonth: formData.frequency === 'monthly' ? formData.dayOfMonth : undefined,
+          duration: formData.duration,
+          startDate: formData.date,
+          startTime: formData.startTime,
+          endTime: formData.endTime || undefined,
+        }
+
+        console.log('Generating recurring dates with settings:', recurringSettings)
+        
+        // Generate all dates for the recurring task
+        const recurringDates = generateRecurringDates(recurringSettings)
+        console.log(`Generated ${recurringDates.length} recurring dates`)
+
+        // Create base task data
+        const baseTask = {
+          title: formData.title,
+          description: formData.description || null,
+          startTime: formData.startTime,
+          endTime: formData.endTime || null,
+          categoryId: formData.categoryId,
+          subcategoryId: formData.subcategoryId || null,
+        }
+
+        // Create all task instances
+        const taskInstances = recurringDates.map(date => 
+          createTaskInstance(baseTask, date)
+        )
+
+        console.log(`Creating ${taskInstances.length} task instances`)
+
+        // Save all task instances with error handling
+        const results = []
+        for (const taskInstance of taskInstances) {
+          try {
+            await onSave(taskInstance)
+            results.push({ success: true, task: taskInstance })
+          } catch (error) {
+            console.error('Failed to create task instance:', error)
+            results.push({ success: false, task: taskInstance, error })
+          }
+        }
+
+        const successCount = results.filter(r => r.success).length
+        const failCount = results.filter(r => !r.success).length
+        
+        console.log(`Recurring task creation completed: ${successCount} successful, ${failCount} failed`)
+        
+        if (failCount > 0) {
+          console.warn(`${failCount} task instances failed to create, but ${successCount} were successful`)
+        }
+
+        console.log('Successfully created all recurring task instances')
+      } else {
+        // Regular single task
+        const startDateTime = createDateTime(formData.date, formData.startTime)
+        const endDateTime = formData.endTime ? createDateTime(formData.date, formData.endTime) : null
+
+        await onSave({
+          title: formData.title,
+          description: formData.description || null,
+          startTime: startDateTime,
+          endTime: endDateTime,
+          date: formData.date,
+          categoryId: formData.categoryId,
+          subcategoryId: formData.subcategoryId || null,
+          isRecurring: false,
+          recurringId: null,
+        })
+      }
+      
+      // Close with animation after saving
       handleClose()
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error)
+      console.error('Error saving task:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -288,9 +382,95 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="isRecurring" className="ml-2 text-sm text-gray-700">
-                      Recurring task
+              Recurring task
             </label>
           </div>
+
+          {/* Recurring Task Options */}
+          {formData.isRecurring && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-900">Recurring Options</h3>
+              
+              <div>
+                <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-1">
+                  Frequency *
+                </label>
+                <select
+                  id="frequency"
+                  value={formData.frequency}
+                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+
+              {formData.frequency === 'weekly' && (
+                <div>
+                  <label htmlFor="dayOfWeek" className="block text-sm font-medium text-gray-700 mb-1">
+                    Day of the week *
+                  </label>
+                  <select
+                    id="dayOfWeek"
+                    value={formData.dayOfWeek}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dayOfWeek: parseInt(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value={1}>Monday</option>
+                    <option value={2}>Tuesday</option>
+                    <option value={3}>Wednesday</option>
+                    <option value={4}>Thursday</option>
+                    <option value={5}>Friday</option>
+                    <option value={6}>Saturday</option>
+                    <option value={0}>Sunday</option>
+                  </select>
+                </div>
+              )}
+
+              {formData.frequency === 'monthly' && (
+                <div>
+                  <label htmlFor="dayOfMonth" className="block text-sm font-medium text-gray-700 mb-1">
+                    Day of the month *
+                  </label>
+                  <input
+                    type="number"
+                    id="dayOfMonth"
+                    value={formData.dayOfMonth}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dayOfMonth: parseInt(e.target.value) }))}
+                    min="1"
+                    max="31"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration (optional)
+                </label>
+                <select
+                  id="duration"
+                  value={formData.duration}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {durationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  How long should this task repeat? Defaults to 1 year if not specified.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-4">
@@ -315,10 +495,10 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || categories.length === 0}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {isSubmitting ? 'Saving...' : 'Save'}
+                {isSubmitting ? 'Saving...' : categories.length === 0 ? 'No categories available' : 'Save'}
               </button>
             </div>
           </div>

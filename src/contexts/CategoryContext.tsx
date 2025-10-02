@@ -63,7 +63,9 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     })
 
     if (!response.ok) {
-      throw new Error('Erreur lors de la création de la catégorie')
+      const errorData = await response.json()
+      console.error('Category creation failed:', errorData)
+      throw new Error(`Erreur lors de la création de la catégorie: ${errorData.error || 'Unknown error'}`)
     }
 
     const newCategory = await response.json()

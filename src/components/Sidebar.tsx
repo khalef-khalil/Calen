@@ -110,7 +110,7 @@ export default function Sidebar() {
             <div>
               <div className="flex items-center justify-between mb-3 px-3">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  My Categories
+                  Categories
                 </h3>
                 <Link
                   href="/setup"
@@ -168,7 +168,7 @@ export default function Sidebar() {
           <div className="px-4 py-4 border-t border-gray-800">
             <div className="bg-gray-800 rounded-lg p-3">
               <p className="text-xs text-gray-400 leading-relaxed">
-                Organize your life with custom categories and track your weekly goals.
+                Manage categories from the main dashboard. Each category manages its own subcategories.
               </p>
             </div>
           </div>
