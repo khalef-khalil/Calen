@@ -5,6 +5,7 @@ export interface Task {
   startTime: Date
   endTime: Date | null
   date: Date
+  category: string
   isRecurring: boolean
   recurringId: string | null
   createdAt: Date
@@ -21,6 +22,7 @@ export interface RecurringTask {
   dayOfWeek: number | null
   dayOfMonth: number | null
   frequency: 'daily' | 'weekly' | 'monthly'
+  category: string
   isActive: boolean
   createdAt: Date
   updatedAt: Date

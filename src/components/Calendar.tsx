@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { getCalendarDays, getPreviousMonth, getNextMonth, formatDate } from '@/lib/date-utils'
-import { Task } from '@/types/task'
+import { Task } from '@/types/category'
+import { useCategories } from '@/contexts/CategoryContext'
 import DayView from './DayView'
 import TaskModal from './TaskModal'
 
@@ -15,6 +16,7 @@ interface CalendarProps {
 }
 
 export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDelete }: CalendarProps) {
+  const { categories } = useCategories()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -157,15 +159,28 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                     
                     {/* Tâches du jour */}
                     <div className="space-y-1">
-                      {dayTasks.slice(0, 3).map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={(e) => handleTaskClick(task, e)}
-                          className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
-                        >
-                          {task.title}
-                        </div>
-                      ))}
+                      {dayTasks.slice(0, 3).map((task) => {
+                        const category = categories.find(cat => cat.id === task.categoryId)
+                        const colorClasses = {
+                          blue: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                          green: 'bg-green-100 text-green-800 hover:bg-green-200',
+                          purple: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
+                          orange: 'bg-orange-100 text-orange-800 hover:bg-orange-200',
+                          pink: 'bg-pink-100 text-pink-800 hover:bg-pink-200',
+                          red: 'bg-red-100 text-red-800 hover:bg-red-200',
+                          indigo: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
+                          teal: 'bg-teal-100 text-teal-800 hover:bg-teal-200',
+                        }
+                        return (
+                          <div
+                            key={task.id}
+                            onClick={(e) => handleTaskClick(task, e)}
+                            className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                          >
+                            {category?.icon} {task.title}
+                          </div>
+                        )
+                      })}
                       {dayTasks.length > 3 && (
                         <div className="text-xs text-gray-500">
                           +{dayTasks.length - 3} autres

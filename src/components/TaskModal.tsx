@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import { createDateTime } from '@/lib/date-utils'
-import { Task } from '@/types/task'
+import { Task } from '@/types/category'
+import { useCategories } from '@/contexts/CategoryContext'
 
 interface TaskModalProps {
   task?: Task | null
@@ -15,12 +16,15 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ task, selectedDate, onSave, onDelete, onClose, triggerPosition }: TaskModalProps) {
+  const { categories, subcategories } = useCategories()
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     startTime: '09:00',
     endTime: '',
     date: selectedDate || new Date(),
+    categoryId: '',
+    subcategoryId: '',
     isRecurring: false,
   })
 
@@ -36,15 +40,18 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
         startTime: task.startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
         endTime: task.endTime ? task.endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
         date: task.date,
+        categoryId: task.categoryId || '',
+        subcategoryId: task.subcategoryId || '',
         isRecurring: task.isRecurring,
       })
     } else if (selectedDate) {
       setFormData(prev => ({
         ...prev,
         date: selectedDate,
+        categoryId: categories[0]?.id || '',
       }))
     }
-  }, [task, selectedDate])
+  }, [task, selectedDate, categories])
 
   // Animation d'ouverture
   useEffect(() => {
@@ -80,15 +87,17 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
       const startDateTime = createDateTime(formData.date, formData.startTime)
       const endDateTime = formData.endTime ? createDateTime(formData.date, formData.endTime) : null
 
-      await onSave({
-        title: formData.title,
-        description: formData.description || null,
-        startTime: startDateTime,
-        endTime: endDateTime,
-        date: formData.date,
-        isRecurring: formData.isRecurring,
-        recurringId: null,
-      })
+              await onSave({
+                title: formData.title,
+                description: formData.description || null,
+                startTime: startDateTime,
+                endTime: endDateTime,
+                date: formData.date,
+                categoryId: formData.categoryId,
+                subcategoryId: formData.subcategoryId || null,
+                isRecurring: formData.isRecurring,
+                recurringId: null,
+              })
       
       // Fermer avec animation après sauvegarde
       handleClose()
@@ -143,9 +152,9 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
       >
         {/* En-tête */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {task ? 'Modifier la tâche' : 'Nouvelle tâche'}
-          </h2>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {task ? 'Edit Task' : 'New Task'}
+                  </h2>
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -158,7 +167,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Titre *
+              Title *
             </label>
             <input
               type="text"
@@ -184,7 +193,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Heure de début *
+                Start Time *
               </label>
               <input
                 type="time"
@@ -197,7 +206,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Heure de fin
+                End Time
               </label>
               <input
                 type="time"
@@ -208,17 +217,67 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              value={formData.date.toISOString().split('T')[0]}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: new Date(e.target.value) }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date
+              </label>
+              <input
+                type="date"
+                value={formData.date.toISOString().split('T')[0]}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: new Date(e.target.value) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Category *
+                      </label>
+                      <select
+                        value={formData.categoryId}
+                        onChange={(e) => {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            categoryId: e.target.value,
+                            subcategoryId: '' // Reset subcategory when category changes
+                          }))
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.icon} {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Subcategory Selection */}
+                  {formData.categoryId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Subcategory (optional)
+                      </label>
+                      <select
+                        value={formData.subcategoryId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, subcategoryId: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">No subcategory</option>
+                        {subcategories
+                          .filter(sub => sub.categoryId === formData.categoryId)
+                          .map((subcategory) => (
+                            <option key={subcategory.id} value={subcategory.id}>
+                              {subcategory.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
 
           <div className="flex items-center">
             <input
@@ -229,7 +288,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="isRecurring" className="ml-2 text-sm text-gray-700">
-              Tâche récurrente
+                      Recurring task
             </label>
           </div>
 
@@ -242,7 +301,7 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
                 className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Supprimer</span>
+                        <span>Delete</span>
               </button>
             )}
             
@@ -252,14 +311,14 @@ export default function TaskModal({ task, selectedDate, onSave, onDelete, onClos
                 onClick={handleClose}
                 className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
+                {isSubmitting ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>

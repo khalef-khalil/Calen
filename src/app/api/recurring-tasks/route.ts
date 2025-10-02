@@ -24,10 +24,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, dayOfWeek, dayOfMonth, frequency } = body
+    const { title, description, startTime, endTime, dayOfWeek, dayOfMonth, frequency, categoryId, subcategoryId } = body
 
-    if (!title || !startTime || !frequency) {
-      return NextResponse.json({ error: 'Titre, heure de début et fréquence requis' }, { status: 400 })
+    if (!title || !startTime || !frequency || !categoryId) {
+      return NextResponse.json({ error: 'Titre, heure de début, fréquence et catégorie requis' }, { status: 400 })
     }
 
     const recurringTask = await prisma.recurringTask.create({
@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
         dayOfWeek,
         dayOfMonth,
         frequency,
+        categoryId,
+        subcategoryId,
       },
     })
 

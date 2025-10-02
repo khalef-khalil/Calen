@@ -17,16 +17,22 @@ model Task {
   startTime   DateTime
   endTime     DateTime?
   date        DateTime
+  categoryId  String
+  subcategoryId String?
   isRecurring Boolean  @default(false)
   recurringId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
+  category      Category      @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory?  @relation(fields: [subcategoryId], references: [id])
   recurringTask RecurringTask? @relation(fields: [recurringId], references: [id])
 
   @@index([date])
   @@index([recurringId])
+  @@index([categoryId])
+  @@index([subcategoryId])
 }
 
 model RecurringTask {
@@ -38,13 +44,60 @@ model RecurringTask {
   dayOfWeek   Int?     // 0 = Sunday, 1 = Monday, etc.
   dayOfMonth  Int?     // For monthly recurring tasks
   frequency   String   // "daily", "weekly", "monthly"
+  categoryId  String
+  subcategoryId String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  tasks Task[]
+  category      Category      @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  tasks         Task[]
 
   @@index([frequency])
   @@index([isActive])
+  @@index([categoryId])
+  @@index([subcategoryId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String   // Emoji or icon identifier
+  color       String   // Color theme
+  weeklyGoal  Int      @default(0) // Hours per week
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // For custom ordering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  subcategories Subcategory[]
+  tasks         Task[]
+  recurringTasks RecurringTask[]
+
+  @@index([isActive])
+  @@index([order])
+}
+
+model Subcategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  categoryId  String
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // For custom ordering within category
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category       Category       @relation(fields: [categoryId], references: [id])
+  tasks          Task[]
+  recurringTasks RecurringTask[]
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([order])
 }

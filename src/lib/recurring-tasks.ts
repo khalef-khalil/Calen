@@ -49,6 +49,8 @@ export const generateRecurringTasks = (
         startTime: startDateTime,
         endTime: endDateTime,
         date: new Date(currentDate),
+        categoryId: recurringTask.categoryId,
+        subcategoryId: recurringTask.subcategoryId,
         isRecurring: true,
         recurringId: recurringTask.id,
       })

@@ -34,7 +34,7 @@ export async function PUT(
   const { id } = await params
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, dayOfWeek, dayOfMonth, frequency, isActive } = body
+    const { title, description, startTime, endTime, dayOfWeek, dayOfMonth, frequency, categoryId, subcategoryId, isActive } = body
 
     const recurringTask = await prisma.recurringTask.update({
       where: { id },
@@ -46,6 +46,8 @@ export async function PUT(
         dayOfWeek,
         dayOfMonth,
         frequency,
+        categoryId,
+        subcategoryId,
         isActive,
       },
     })

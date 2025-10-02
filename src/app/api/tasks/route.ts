@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
         },
       },
       include: {
+        category: true,
+        subcategory: true,
         recurringTask: true,
       },
       orderBy: {
@@ -38,10 +40,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, date, isRecurring, recurringId } = body
+    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId } = body
 
-    if (!title || !startTime || !date) {
-      return NextResponse.json({ error: 'Titre, heure de début et date requis' }, { status: 400 })
+    if (!title || !startTime || !date || !categoryId) {
+      return NextResponse.json({ error: 'Titre, heure de début, date et catégorie requis' }, { status: 400 })
     }
 
     const task = await prisma.task.create({
@@ -51,10 +53,14 @@ export async function POST(request: NextRequest) {
         startTime: new Date(startTime),
         endTime: endTime ? new Date(endTime) : null,
         date: new Date(date),
+        categoryId,
+        subcategoryId,
         isRecurring,
         recurringId,
       },
       include: {
+        category: true,
+        subcategory: true,
         recurringTask: true,
       },
     })

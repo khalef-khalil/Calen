@@ -11,6 +11,8 @@ export async function GET(
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
+        category: true,
+        subcategory: true,
         recurringTask: true,
       },
     })
@@ -34,7 +36,7 @@ export async function PUT(
   const { id } = await params
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, date, isRecurring, recurringId } = body
+    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId } = body
 
     const task = await prisma.task.update({
       where: { id },
@@ -44,10 +46,14 @@ export async function PUT(
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : null,
         date: date ? new Date(date) : undefined,
+        categoryId,
+        subcategoryId,
         isRecurring,
         recurringId,
       },
       include: {
+        category: true,
+        subcategory: true,
         recurringTask: true,
       },
     })

@@ -2,7 +2,8 @@
 
 import { Plus } from 'lucide-react'
 import { formatDate, getDayHours } from '@/lib/date-utils'
-import { Task } from '@/types/task'
+import { Task } from '@/types/category'
+import { useCategories } from '@/contexts/CategoryContext'
 
 interface DayViewProps {
   date: Date
@@ -12,6 +13,7 @@ interface DayViewProps {
 }
 
 export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayViewProps) {
+  const { categories } = useCategories()
   const dayHours = getDayHours()
 
   // Grouper les tâches par heure
@@ -62,31 +64,78 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask }: DayView
                 
                 {/* Tâches de cette heure */}
                 <div className="flex-1 space-y-1">
-                  {hourTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => onTaskClick(task)}
-                      className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-blue-900">{task.title}</h3>
-                        <span className="text-xs text-blue-600">
-                          {task.endTime 
-                            ? `${task.startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - ${task.endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                            : task.startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-                          }
-                        </span>
+                  {hourTasks.map((task) => {
+                    const category = categories.find(cat => cat.id === task.categoryId)
+                    const colorClasses = {
+                      blue: 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-900',
+                      green: 'bg-green-50 border-green-200 hover:bg-green-100 text-green-900',
+                      purple: 'bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-900',
+                      orange: 'bg-orange-50 border-orange-200 hover:bg-orange-100 text-orange-900',
+                      pink: 'bg-pink-50 border-pink-200 hover:bg-pink-100 text-pink-900',
+                      red: 'bg-red-50 border-red-200 hover:bg-red-100 text-red-900',
+                      indigo: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-900',
+                      teal: 'bg-teal-50 border-teal-200 hover:bg-teal-100 text-teal-900',
+                    }
+                    const textColorClasses = {
+                      blue: 'text-blue-700',
+                      green: 'text-green-700',
+                      purple: 'text-purple-700',
+                      orange: 'text-orange-700',
+                      pink: 'text-pink-700',
+                      red: 'text-red-700',
+                      indigo: 'text-indigo-700',
+                      teal: 'text-teal-700',
+                    }
+                    const badgeColorClasses = {
+                      blue: 'bg-blue-200 text-blue-800',
+                      green: 'bg-green-200 text-green-800',
+                      purple: 'bg-purple-200 text-purple-800',
+                      orange: 'bg-orange-200 text-orange-800',
+                      pink: 'bg-pink-200 text-pink-800',
+                      red: 'bg-red-200 text-red-800',
+                      indigo: 'bg-indigo-200 text-indigo-800',
+                      teal: 'bg-teal-200 text-teal-800',
+                    }
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => onTaskClick(task)}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-900'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium flex items-center">
+                            {category?.icon} {task.title}
+                          </h3>
+                          <span className={`text-xs ${textColorClasses[category?.color as keyof typeof textColorClasses] || 'text-gray-600'}`}>
+                            {task.endTime 
+                              ? `${task.startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - ${task.endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                              : task.startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                            }
+                          </span>
+                        </div>
+                        {task.description && (
+                          <p className={`text-sm mt-1 ${textColorClasses[category?.color as keyof typeof textColorClasses] || 'text-gray-700'}`}>
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`inline-block px-2 py-1 text-xs rounded ${badgeColorClasses[category?.color as keyof typeof badgeColorClasses] || 'bg-gray-200 text-gray-800'}`}>
+                            {category?.name}
+                          </span>
+                          {task.subcategory && (
+                            <span className="inline-block px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded">
+                              {task.subcategory.name}
+                            </span>
+                          )}
+                          {task.isRecurring && (
+                            <span className="inline-block px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded">
+                              Récurrent
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {task.description && (
-                        <p className="text-sm text-blue-700 mt-1">{task.description}</p>
-                      )}
-                      {task.isRecurring && (
-                        <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-200 text-blue-800 rounded">
-                          Récurrent
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                   
                   {/* Ligne de l'heure si pas de tâches */}
                   {hourTasks.length === 0 && (
