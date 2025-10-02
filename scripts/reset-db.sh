@@ -9,8 +9,8 @@ echo "🗄️  Database Reset Script"
 echo "========================="
 
 # Check if database exists
-if [ ! -f "prisma/dev.db" ]; then
-    echo "❌ Database file 'prisma/dev.db' not found!"
+if [ ! -f "dev.db" ]; then
+    echo "❌ Database file 'dev.db' not found!"
     exit 1
 fi
 
@@ -22,13 +22,13 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="backups/dev_backup_${TIMESTAMP}.db"
 
 echo "📦 Creating backup..."
-cp prisma/dev.db "$BACKUP_FILE"
+cp dev.db "$BACKUP_FILE"
 echo "✅ Backup created: $BACKUP_FILE"
 
 echo "🗑️  Resetting database..."
 
 # Delete all data from all tables
-sqlite3 prisma/dev.db <<EOF
+sqlite3 dev.db <<EOF
 DELETE FROM Task;
 DELETE FROM RecurringTask;
 DELETE FROM Subcategory;
@@ -42,10 +42,10 @@ echo "✅ Database reset complete!"
 echo ""
 echo "📊 Database Status:"
 echo "=================="
-TASK_COUNT=$(sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Task;" 2>/dev/null || echo "0")
-CATEGORY_COUNT=$(sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Category;" 2>/dev/null || echo "0")
-RECURRING_COUNT=$(sqlite3 prisma/dev.db "SELECT COUNT(*) FROM RecurringTask;" 2>/dev/null || echo "0")
-SUBCATEGORY_COUNT=$(sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Subcategory;" 2>/dev/null || echo "0")
+TASK_COUNT=$(sqlite3 dev.db "SELECT COUNT(*) FROM Task;" 2>/dev/null || echo "0")
+CATEGORY_COUNT=$(sqlite3 dev.db "SELECT COUNT(*) FROM Category;" 2>/dev/null || echo "0")
+RECURRING_COUNT=$(sqlite3 dev.db "SELECT COUNT(*) FROM RecurringTask;" 2>/dev/null || echo "0")
+SUBCATEGORY_COUNT=$(sqlite3 dev.db "SELECT COUNT(*) FROM Subcategory;" 2>/dev/null || echo "0")
 
 echo "Tasks: $TASK_COUNT"
 echo "Categories: $CATEGORY_COUNT"
