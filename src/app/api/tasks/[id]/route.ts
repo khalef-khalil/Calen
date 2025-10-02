@@ -36,8 +36,65 @@ export async function PUT(
   const { id } = await params
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId, isCompleted, completedAt } = body
+    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId, isCompleted, completedAt, editAllFuture } = body
 
+    // First, get the current task to check if it's a recurring task
+    const currentTask = await prisma.task.findUnique({
+      where: { id },
+      include: { recurringTask: true }
+    })
+
+    if (!currentTask) {
+      return NextResponse.json({ error: 'Tâche non trouvée' }, { status: 404 })
+    }
+
+    // If this is a recurring task and editAllFuture is true, update the recurring task template
+    if (currentTask.recurringId && editAllFuture) {
+      const { frequency, dayOfWeek, dayOfMonth, duration, endDate } = body
+      
+      // Update the recurring task template with all recurring settings
+      await prisma.recurringTask.update({
+        where: { id: currentTask.recurringId },
+        data: {
+          title,
+          description,
+          startTime: startTime ? new Date(startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : undefined,
+          endTime: endTime ? new Date(endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : null,
+          categoryId,
+          subcategoryId,
+          frequency: frequency || 'daily',
+          dayOfWeek: dayOfWeek || 1,
+          dayOfMonth: dayOfMonth || 1,
+          duration: duration || 12,
+          endDate: endDate ? new Date(endDate) : null,
+        }
+      })
+
+      // Update all future instances of this recurring task
+      const futureDate = new Date(date || currentTask.date)
+      futureDate.setHours(0, 0, 0, 0)
+      
+      await prisma.task.updateMany({
+        where: {
+          recurringId: currentTask.recurringId,
+          date: {
+            gte: futureDate
+          }
+        },
+        data: {
+          title,
+          description,
+          startTime: startTime ? new Date(startTime) : undefined,
+          endTime: endTime ? new Date(endTime) : null,
+          categoryId,
+          subcategoryId,
+          isCompleted,
+          completedAt: completedAt ? new Date(completedAt) : null,
+        }
+      })
+    }
+
+    // Update the current task instance
     const task = await prisma.task.update({
       where: { id },
       data: {

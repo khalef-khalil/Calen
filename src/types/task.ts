@@ -11,11 +11,14 @@ export interface Task {
   subcategoryId: string | null
   isRecurring: boolean
   recurringId: string | null
+  isCompleted: boolean
+  completedAt: Date | null
   createdAt: Date
   updatedAt: Date
   category?: Category
   subcategory?: Subcategory | null
   recurringTask?: RecurringTask | null
+  editAllFuture?: boolean // For editing recurring tasks
 }
 
 export interface RecurringTask {
@@ -26,7 +29,7 @@ export interface RecurringTask {
   endTime: string | null
   dayOfWeek: number | null
   dayOfMonth: number | null
-  frequency: 'daily' | 'weekly' | 'monthly'
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly'
   duration: number | null // Duration in months (1, 3, 6, 12)
   endDate: Date | null // Calculated end date based on duration
   categoryId: string

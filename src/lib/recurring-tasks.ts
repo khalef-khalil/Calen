@@ -29,6 +29,12 @@ export const generateRecurringTasks = (
         }
         break
 
+      case 'biweekly':
+        if (recurringTask.dayOfWeek !== null && getDay(currentDate) === recurringTask.dayOfWeek) {
+          shouldCreateTask = true
+        }
+        break
+
       case 'monthly':
         if (recurringTask.dayOfMonth !== null && getDate(currentDate) === recurringTask.dayOfMonth) {
           shouldCreateTask = true
@@ -69,6 +75,9 @@ export const generateRecurringTasks = (
       case 'weekly':
         currentDate = addWeeks(currentDate, 1)
         break
+      case 'biweekly':
+        currentDate = addWeeks(currentDate, 2)
+        break
       case 'monthly':
         currentDate = addMonths(currentDate, 1)
         break
@@ -91,6 +100,8 @@ export const getFrequencyDescription = (recurringTask: RecurringTask) => {
       return 'Tous les jours'
     case 'weekly':
       return `Tous les ${getDayName(recurringTask.dayOfWeek || 0)}`
+    case 'biweekly':
+      return `Tous les ${getDayName(recurringTask.dayOfWeek || 0)} (bi-hebdomadaire)`
     case 'monthly':
       return `Le ${recurringTask.dayOfMonth} de chaque mois`
     default:

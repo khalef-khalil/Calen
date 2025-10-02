@@ -107,20 +107,28 @@ export default function CalendarPage() {
 
       if (response.ok) {
         const updatedTask = await response.json()
-        setTasks(prev => prev.map(task => 
-          task.id === id 
-            ? {
-                ...updatedTask,
-                startTime: new Date(updatedTask.startTime),
-                endTime: updatedTask.endTime ? new Date(updatedTask.endTime) : null,
-                date: new Date(updatedTask.date),
-                isCompleted: updatedTask.isCompleted ?? false,
-                completedAt: updatedTask.completedAt ? new Date(updatedTask.completedAt) : null,
-                createdAt: new Date(updatedTask.createdAt),
-                updatedAt: new Date(updatedTask.updatedAt),
-              }
-            : task
-        ))
+        
+        // If this was a recurring task update that affects all future instances,
+        // reload all tasks to show the changes
+        if (taskData.editAllFuture && taskData.recurringId) {
+          await loadTasks()
+        } else {
+          // Otherwise, just update the single task in state
+          setTasks(prev => prev.map(task => 
+            task.id === id 
+              ? {
+                  ...updatedTask,
+                  startTime: new Date(updatedTask.startTime),
+                  endTime: updatedTask.endTime ? new Date(updatedTask.endTime) : null,
+                  date: new Date(updatedTask.date),
+                  isCompleted: updatedTask.isCompleted ?? false,
+                  completedAt: updatedTask.completedAt ? new Date(updatedTask.completedAt) : null,
+                  createdAt: new Date(updatedTask.createdAt),
+                  updatedAt: new Date(updatedTask.updatedAt),
+                }
+              : task
+          ))
+        }
       } else {
         throw new Error('Erreur lors de la mise à jour de la tâche')
       }

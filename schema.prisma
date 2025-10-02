@@ -45,7 +45,7 @@ model RecurringTask {
   endTime     String?  // Store as string (HH:MM format)
   dayOfWeek   Int?     // 0 = Sunday, 1 = Monday, etc.
   dayOfMonth  Int?     // For monthly recurring tasks
-  frequency   String   // "daily", "weekly", "monthly"
+  frequency   String   // "daily", "weekly", "biweekly", "monthly"
   duration    Int?     // Duration in months (1, 3, 6, 12)
   endDate     DateTime? // Calculated end date based on duration
   categoryId  String

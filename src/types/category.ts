@@ -57,7 +57,7 @@ export interface RecurringTask {
   endTime: string | null
   dayOfWeek: number | null
   dayOfMonth: number | null
-  frequency: 'daily' | 'weekly' | 'monthly'
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly'
   categoryId: string
   subcategoryId: string | null
   isActive: boolean

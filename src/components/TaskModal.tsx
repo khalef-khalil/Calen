@@ -37,11 +37,15 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
     isRecurring: false,
     isCompleted: false,
     // Recurring task fields
-    frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
+    frequency: 'daily' as 'daily' | 'weekly' | 'biweekly' | 'monthly',
     dayOfWeek: 1, // Monday by default
     dayOfMonth: 1,
     duration: 12, // Default to 1 year
   })
+
+  // State for recurring task editing options
+  const [isRecurringTask, setIsRecurringTask] = useState(false)
+  const [editAllFuture, setEditAllFuture] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
@@ -49,6 +53,9 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
 
   useEffect(() => {
     if (task) {
+      // Load recurring task data if available
+      const recurringData = task.recurringTask
+      
       setFormData({
         title: task.title,
         description: task.description || '',
@@ -59,12 +66,20 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
         subcategoryId: task.subcategoryId || '',
         isRecurring: task.isRecurring,
         isCompleted: task.isCompleted ?? false,
-        // Recurring task fields - these would come from the recurring task if it exists
-        frequency: 'daily',
-        dayOfWeek: 1,
-        dayOfMonth: 1,
-        duration: 12,
+        // Load recurring task fields from the recurring task template if available
+        frequency: recurringData?.frequency || 'daily',
+        dayOfWeek: recurringData?.dayOfWeek || 1,
+        dayOfMonth: recurringData?.dayOfMonth || 1,
+        duration: recurringData?.duration || 12,
       })
+      
+      // Check if this is a recurring task instance
+      console.log('Task being edited:', task)
+      console.log('Task recurringId:', task.recurringId)
+      console.log('Recurring task data:', recurringData)
+      console.log('Is recurring task:', !!task.recurringId)
+      // For now, also check the isRecurring flag as a fallback
+      setIsRecurringTask(!!task.recurringId || task.isRecurring)
     } else if (selectedDate) {
       setFormData(prev => ({
         ...prev,
@@ -72,6 +87,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
         startTime: clickedTime || prev.startTime,
         categoryId: categories[0]?.id || '',
       }))
+      setIsRecurringTask(false)
     }
     
     // Only set default category for new tasks, not when editing existing tasks
@@ -116,17 +132,55 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
     try {
       console.log('Form submission - formData:', formData)
       console.log('Available categories:', categories)
+      console.log('Editing task:', task)
       
       // Validate required fields
       if (!formData.categoryId) {
         throw new Error('Please select a category')
       }
 
-      if (formData.isRecurring) {
-        // For recurring tasks, generate all instances upfront
+      // If editing an existing task, handle recurring task logic
+      if (task) {
+        const startDateTime = createDateTime(formData.date, formData.startTime)
+        const endDateTime = formData.endTime ? createDateTime(formData.date, formData.endTime) : null
+
+        // Prepare the task data
+        const taskData = {
+          title: formData.title,
+          description: formData.description || null,
+          startTime: startDateTime,
+          endTime: endDateTime,
+          date: formData.date,
+          categoryId: formData.categoryId,
+          subcategoryId: formData.subcategoryId || null,
+          isRecurring: formData.isRecurring,
+          recurringId: task.recurringId || null,
+          isCompleted: formData.isCompleted,
+          completedAt: formData.isCompleted ? new Date() : null,
+        }
+
+        // Add recurring task editing options if this is a recurring task
+        if (isRecurringTask) {
+          taskData.editAllFuture = editAllFuture
+          // Include recurring task fields for updating the template
+          taskData.frequency = formData.frequency
+          taskData.dayOfWeek = formData.dayOfWeek
+          taskData.dayOfMonth = formData.dayOfMonth
+          taskData.duration = formData.duration
+          taskData.endDate = (() => {
+            const endDate = new Date(formData.date)
+            endDate.setMonth(endDate.getMonth() + formData.duration)
+            return endDate
+          })()
+          
+        }
+
+        await onSave(taskData)
+      } else if (formData.isRecurring) {
+        // For new recurring tasks, generate all instances upfront
         const recurringSettings = {
           frequency: formData.frequency,
-          dayOfWeek: formData.frequency === 'weekly' ? formData.dayOfWeek : undefined,
+          dayOfWeek: (formData.frequency === 'weekly' || formData.frequency === 'biweekly') ? formData.dayOfWeek : undefined,
           dayOfMonth: formData.frequency === 'monthly' ? formData.dayOfMonth : undefined,
           duration: formData.duration,
           startDate: formData.date,
@@ -150,10 +204,46 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
           subcategoryId: formData.subcategoryId || null,
         }
 
-        // Create all task instances
-        const taskInstances = recurringDates.map(date => 
-          createTaskInstance(baseTask, date)
-        )
+        // First, create a RecurringTask record
+        const recurringTaskData = {
+          title: formData.title,
+          description: formData.description || null,
+          startTime: formData.startTime,
+          endTime: formData.endTime || null,
+          dayOfWeek: (formData.frequency === 'weekly' || formData.frequency === 'biweekly') ? formData.dayOfWeek : null,
+          dayOfMonth: formData.frequency === 'monthly' ? formData.dayOfMonth : null,
+          frequency: formData.frequency,
+          duration: formData.duration,
+          endDate: (() => {
+            const endDate = new Date(formData.date)
+            endDate.setMonth(endDate.getMonth() + formData.duration)
+            return endDate
+          })(),
+          categoryId: formData.categoryId,
+          subcategoryId: formData.subcategoryId || null,
+        }
+
+        // Create the recurring task first
+        const recurringTaskResponse = await fetch('/api/recurring-tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(recurringTaskData),
+        })
+
+        if (!recurringTaskResponse.ok) {
+          throw new Error('Failed to create recurring task template')
+        }
+
+        const recurringTask = await recurringTaskResponse.json()
+        console.log('Created recurring task:', recurringTask)
+
+        // Create all task instances with the recurringId
+        const taskInstances = recurringDates.map(date => ({
+          ...createTaskInstance(baseTask, date),
+          recurringId: recurringTask.id
+        }))
 
         console.log(`Creating ${taskInstances.length} task instances`)
 
@@ -180,7 +270,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
 
         console.log('Successfully created all recurring task instances')
       } else {
-        // Regular single task
+        // Regular single new task
         const startDateTime = createDateTime(formData.date, formData.startTime)
         const endDateTime = formData.endTime ? createDateTime(formData.date, formData.endTime) : null
 
@@ -419,17 +509,18 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
                 <select
                   id="frequency"
                   value={formData.frequency}
-                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'biweekly' | 'monthly' }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-weekly</option>
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
 
-              {formData.frequency === 'weekly' && (
+              {(formData.frequency === 'weekly' || formData.frequency === 'biweekly') && (
                 <div>
                   <label htmlFor="dayOfWeek" className="block text-sm font-medium text-gray-700 mb-1">
                     Day of the week *
@@ -490,6 +581,52 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
                   How long should this task repeat? Defaults to 1 year if not specified.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Recurring Task Editing Options */}
+          {isRecurringTask && (
+            <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-medium text-blue-900">Edit Recurring Task</h3>
+              <p className="text-xs text-blue-700">
+                This task is part of a recurring series. Choose how to apply your changes:
+              </p>
+              
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="editThisInstance"
+                    name="editScope"
+                    checked={!editAllFuture}
+                    onChange={() => setEditAllFuture(false)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="editThisInstance" className="ml-2 text-sm text-blue-800">
+                    Edit only this instance
+                  </label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="editAllFuture"
+                    name="editScope"
+                    checked={editAllFuture}
+                    onChange={() => setEditAllFuture(true)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="editAllFuture" className="ml-2 text-sm text-blue-800">
+                    Edit this and all future instances
+                  </label>
+                </div>
+              </div>
+              
+              {editAllFuture && (
+                <div className="text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                  ⚠️ This will update the recurring task template and affect all future occurrences.
+                </div>
+              )}
             </div>
           )}
 

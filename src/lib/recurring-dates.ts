@@ -1,7 +1,7 @@
 import { addDays, addWeeks, addMonths, getDay, getDate } from 'date-fns'
 
 export interface RecurringTaskSettings {
-  frequency: 'daily' | 'weekly' | 'monthly'
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly'
   dayOfWeek?: number // 0 = Sunday, 1 = Monday, etc.
   dayOfMonth?: number // 1-31
   duration: number // Duration in months
@@ -39,6 +39,12 @@ export function generateRecurringDates(settings: RecurringTaskSettings): Date[] 
         }
         break
         
+      case 'biweekly':
+        if (dayOfWeek !== undefined && getDay(currentDate) === dayOfWeek) {
+          shouldIncludeDate = true
+        }
+        break
+        
       case 'monthly':
         if (dayOfMonth !== undefined && getDate(currentDate) === dayOfMonth) {
           shouldIncludeDate = true
@@ -57,6 +63,9 @@ export function generateRecurringDates(settings: RecurringTaskSettings): Date[] 
         break
       case 'weekly':
         currentDate = addWeeks(currentDate, 1)
+        break
+      case 'biweekly':
+        currentDate = addWeeks(currentDate, 2)
         break
       case 'monthly':
         currentDate = addMonths(currentDate, 1)

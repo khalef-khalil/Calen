@@ -27,13 +27,17 @@ export default function WeekView({
   const { categories } = useCategories()
   const [currentWeek, setCurrentWeek] = useState(new Date())
 
-  // Generate time slots from 6 AM to 11 PM
-  const timeSlots = Array.from({ length: 18 }, (_, i) => {
-    const hour = i + 6
+  // Generate time slots from 6 AM to 11 PM with 30-minute intervals
+  const timeSlots = Array.from({ length: 36 }, (_, i) => {
+    const hour = Math.floor(i / 2) + 6
+    const minute = (i % 2) * 30
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
     return {
       hour,
-      time: `${hour.toString().padStart(2, '0')}:00`,
-      displayTime: hour < 10 ? `0${hour}:00` : `${hour}:00`
+      minute,
+      time: timeString,
+      displayTime: hour < 10 ? `0${hour}:00` : `${hour}:00`, // Keep 1-hour display
+      isFirstHalf: minute === 0 // First 30 minutes of the hour
     }
   })
 
@@ -45,20 +49,22 @@ export default function WeekView({
 
   const weekDays = getWeekDays(currentWeek)
 
-  // Group tasks by date and time (only show in starting hour)
+  // Group tasks by date and time (only show in starting time slot)
   const tasksByDateAndTime = tasks.reduce((acc, task) => {
     const dateKey = task.date.toISOString().split('T')[0]
     const hour = task.startTime.getHours()
+    const minute = task.startTime.getMinutes()
+    const timeSlotKey = `${hour}:${minute < 30 ? '00' : '30'}`
     
     if (!acc[dateKey]) {
       acc[dateKey] = {}
     }
-    if (!acc[dateKey][hour]) {
-      acc[dateKey][hour] = []
+    if (!acc[dateKey][timeSlotKey]) {
+      acc[dateKey][timeSlotKey] = []
     }
-    acc[dateKey][hour].push(task)
+    acc[dateKey][timeSlotKey].push(task)
     return acc
-  }, {} as Record<string, Record<number, Task[]>>)
+  }, {} as Record<string, Record<string, Task[]>>)
 
   const handlePreviousWeek = () => {
     setCurrentWeek(prev => addDays(prev, -7))
@@ -73,9 +79,10 @@ export default function WeekView({
   }
 
   const getTaskDuration = (task: Task) => {
-    if (!task.endTime) return 1
-    const duration = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60 * 60)
-    return Math.max(1, Math.ceil(duration))
+    if (!task.endTime) return 2 // 1 hour = 2 slots of 30 minutes
+    const durationInMinutes = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60)
+    const durationInSlots = Math.max(2, Math.ceil(durationInMinutes / 30)) // Each slot is 30 minutes
+    return durationInSlots
   }
 
   const getTaskPosition = (task: Task) => {
@@ -86,19 +93,22 @@ export default function WeekView({
   }
 
   // Check if a time slot is occupied by a multi-hour task
-  const isTimeSlotOccupied = (day: Date, hour: number) => {
+  const isTimeSlotOccupied = (day: Date, timeSlot: { hour: number; minute: number }) => {
     const dateKey = day.toISOString().split('T')[0]
     const dayTasks = tasksByDateAndTime[dateKey] || {}
     
-    // Check all tasks for this day to see if any span over this hour
+    // Check all tasks for this day to see if any span over this time slot
     const allDayTasks = Object.values(dayTasks).flat()
     
     return allDayTasks.some(task => {
-      const startHour = task.startTime.getHours()
-      const endHour = task.endTime ? task.endTime.getHours() : startHour + 1
+      const startTime = task.startTime.getTime()
+      const endTime = task.endTime ? task.endTime.getTime() : startTime + (60 * 60 * 1000) // Default 1 hour
+      const slotStartTime = new Date(day)
+      slotStartTime.setHours(timeSlot.hour, timeSlot.minute, 0, 0)
+      const slotEndTime = new Date(slotStartTime.getTime() + (30 * 60 * 1000)) // 30 minutes
       
-      // Check if this hour falls within the task's time range
-      return hour >= startHour && hour < endHour
+      // Check if this time slot overlaps with the task's time range
+      return slotStartTime.getTime() < endTime && slotEndTime.getTime() > startTime
     })
   }
 
@@ -184,9 +194,12 @@ export default function WeekView({
           <div className="grid grid-cols-8">
             {/* Time Column */}
             <div className="border-r">
-              {timeSlots.map((slot) => (
-                <div key={slot.hour} className="h-16 border-b border-gray-100 flex items-center justify-center">
-                  <span className="text-xs text-gray-500">{slot.displayTime}</span>
+              {timeSlots.map((slot, index) => (
+                <div key={`${slot.hour}-${slot.minute}`} className="h-8 border-b border-gray-100 flex items-center justify-center">
+                  {/* Only show hour label for the first 30-minute slot of each hour */}
+                  {slot.isFirstHalf && (
+                    <span className="text-xs text-gray-500">{slot.displayTime}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -200,17 +213,21 @@ export default function WeekView({
               return (
                 <div key={dayIndex} className="border-r last:border-r-0 relative">
                   {timeSlots.map((slot) => {
-                    const slotTasks = dayTasks[slot.hour] || []
-                    const isCurrentHour = new Date().getHours() === slot.hour && isToday
-                    const isOccupied = isTimeSlotOccupied(day, slot.hour)
+                    const timeSlotKey = `${slot.hour}:${slot.minute < 30 ? '00' : '30'}`
+                    const slotTasks = dayTasks[timeSlotKey] || []
+                    const currentTime = new Date()
+                    const isCurrentSlot = currentTime.getHours() === slot.hour && 
+                                       Math.floor(currentTime.getMinutes() / 30) * 30 === slot.minute && 
+                                       isToday
+                    const isOccupied = isTimeSlotOccupied(day, slot)
 
                     return (
                       <div
-                        key={slot.hour}
-                        className={`h-16 border-b border-gray-100 relative group ${
+                        key={`${slot.hour}-${slot.minute}`}
+                        className={`h-8 border-b border-gray-100 relative group ${
                           isOccupied 
                             ? 'bg-gray-100 cursor-not-allowed' 
-                            : `cursor-pointer ${isCurrentHour ? 'bg-blue-50' : 'hover:bg-gray-50'}`
+                            : `cursor-pointer ${isCurrentSlot ? 'bg-blue-50' : 'hover:bg-gray-50'}`
                         }`}
                         onClick={isOccupied ? undefined : (e) => onAddTask(day, e, slot.time)}
                       >
@@ -223,29 +240,29 @@ export default function WeekView({
                               onAddTask(day, e, slot.time)
                             }}
                           >
-                            <Plus className="w-4 h-4 text-gray-400" />
+                            <Plus className="w-3 h-3 text-gray-400" />
                           </button>
                         )}
 
                         {/* Tasks in this time slot */}
-                        <div className="absolute inset-0 p-1 space-y-1">
+                        <div className="absolute inset-0 p-0.5 space-y-0.5">
                           {slotTasks.map((task) => {
                             const category = categories.find(cat => cat.id === task.categoryId)
                             const duration = getTaskDuration(task)
                             const position = getTaskPosition(task)
                             
-                            // Calculate height based on duration (each hour is 64px)
-                            const height = `${duration * 64}px`
+                            // Calculate height based on duration (each 30-min slot is 32px)
+                            const height = `${duration * 32}px`
                             const top = `${position}%`
 
                             return (
                               <div
                                 key={task.id}
-                                className={`absolute left-1 right-1 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.isCompleted)}`}
+                                className={`absolute left-0.5 right-0.5 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.isCompleted)}`}
                                 style={{
                                   top,
                                   height,
-                                  minHeight: '20px',
+                                  minHeight: '16px',
                                   zIndex: 10 // Ensure tasks appear above the background
                                 }}
                                 onClick={(e) => onTaskClick(task, e)}

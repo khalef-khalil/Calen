@@ -105,14 +105,14 @@ export default function SettingsPage() {
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0
                             const otherCategoriesTotal = categories
-                              .filter(cat => cat.id !== categoryId)
+                              .filter(cat => cat.id !== category.id)
                               .reduce((sum, cat) => sum + cat.weeklyGoal, 0)
                             const maxAllowed = 120 - otherCategoriesTotal
                             setNewGoal(Math.min(value, maxAllowed))
                           }}
                           className="w-20 text-center border border-gray-300 rounded px-2 py-1"
                           min="0"
-                          max={120 - categories.filter(cat => cat.id !== categoryId).reduce((sum, cat) => sum + cat.weeklyGoal, 0)}
+                          max={120 - categories.filter(cat => cat.id !== category.id).reduce((sum, cat) => sum + cat.weeklyGoal, 0)}
                         />
                         <button
                           onClick={() => handleGoalUpdate(category.id, newGoal)}
