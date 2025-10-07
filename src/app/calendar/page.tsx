@@ -66,11 +66,41 @@ export default function CalendarPage() {
           startTime: new Date(task.startTime),
           endTime: task.endTime ? new Date(task.endTime) : null,
           date: new Date(task.date),
+          status: task.status || 'scheduled',
           isCompleted: task.isCompleted ?? false,
           completedAt: task.completedAt ? new Date(task.completedAt) : null,
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt),
         }))
+        
+        // Auto-update scheduled tasks to pending if their date has passed
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        const tasksToUpdate = tasksWithDates.filter((task: Task) => {
+          const taskDate = new Date(task.date)
+          taskDate.setHours(0, 0, 0, 0)
+          return task.status === 'scheduled' && taskDate < today
+        })
+        
+        // Update tasks to pending status in background
+        if (tasksToUpdate.length > 0) {
+          Promise.all(
+            tasksToUpdate.map((task: Task) =>
+              fetch(`/api/tasks/${task.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'pending' }),
+              })
+            )
+          ).then(() => {
+            // Reload tasks to reflect the changes
+            loadTasks()
+          }).catch(error => {
+            console.error('Error auto-updating task statuses:', error)
+          })
+        }
+        
         setTasks(tasksWithDates)
       }
     } catch (error) {

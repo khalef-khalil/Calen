@@ -1,5 +1,7 @@
 import { Category, Subcategory } from './category'
 
+export type TaskStatus = 'scheduled' | 'pending' | 'completed' | 'cancelled' | 'skipped'
+
 export interface Task {
   id: string
   title: string
@@ -11,7 +13,8 @@ export interface Task {
   subcategoryId: string | null
   isRecurring: boolean
   recurringId: string | null
-  isCompleted: boolean
+  status: TaskStatus
+  isCompleted: boolean // Kept for backward compatibility
   completedAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -19,6 +22,14 @@ export interface Task {
   subcategory?: Subcategory | null
   recurringTask?: RecurringTask | null
   editAllFuture?: boolean // For editing recurring tasks
+}
+
+export interface Settings {
+  id: string
+  completionThresholdLow: number
+  completionThresholdHigh: number
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface RecurringTask {

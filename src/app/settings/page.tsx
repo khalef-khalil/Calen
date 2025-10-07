@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useCategories } from '@/contexts/CategoryContext'
 import { RotateCcw, Save, Plus, Edit, Trash2, Settings as SettingsIcon, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { Settings } from '@/types/task'
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetToDefaults } = useSettings()
@@ -12,6 +13,56 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [newGoal, setNewGoal] = useState<number>(0)
+  const [completionSettings, setCompletionSettings] = useState<Settings | null>(null)
+  const [thresholds, setThresholds] = useState({
+    low: 50,
+    high: 100
+  })
+
+  // Load completion settings
+  useEffect(() => {
+    const loadCompletionSettings = async () => {
+      try {
+        const response = await fetch('/api/settings')
+        if (response.ok) {
+          const data = await response.json()
+          setCompletionSettings(data)
+          setThresholds({
+            low: data.completionThresholdLow,
+            high: data.completionThresholdHigh
+          })
+        }
+      } catch (error) {
+        console.error('Error loading completion settings:', error)
+      }
+    }
+    loadCompletionSettings()
+  }, [])
+
+  const handleThresholdsUpdate = async () => {
+    try {
+      setIsSaving(true)
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completionThresholdLow: thresholds.low,
+          completionThresholdHigh: thresholds.high,
+        }),
+      })
+      
+      if (response.ok) {
+        const updated = await response.json()
+        setCompletionSettings(updated)
+      }
+    } catch (error) {
+      console.error('Error updating thresholds:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleGoalUpdate = async (categoryId: string, newGoal: number) => {
     // Calculate what the total would be with this change
@@ -330,6 +381,83 @@ export default function SettingsPage() {
                   <h3 className="font-medium text-gray-900">Reset settings</h3>
                   <p className="text-sm text-gray-600">Reset to default settings</p>
                 </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Completion Thresholds */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Day Completion Thresholds</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Configure how past days are colored based on task completion rate
+            </p>
+            
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="thresholdLow" className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum completion rate (Red → Green) - {thresholds.low}%
+                </label>
+                <input
+                  type="range"
+                  id="thresholdLow"
+                  min="0"
+                  max="100"
+                  value={thresholds.low}
+                  onChange={(e) => setThresholds(prev => ({ ...prev, low: parseInt(e.target.value) }))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Days with completion below {thresholds.low}% will be red
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="thresholdHigh" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full completion rate (Green → Golden) - {thresholds.high}%
+                </label>
+                <input
+                  type="range"
+                  id="thresholdHigh"
+                  min="0"
+                  max="100"
+                  value={thresholds.high}
+                  onChange={(e) => setThresholds(prev => ({ ...prev, high: parseInt(e.target.value) }))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Days at {thresholds.high}% completion will be golden, others between {thresholds.low}% and {thresholds.high}% will be green
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Color Legend</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 rounded bg-red-100 border border-red-300 mr-3"></div>
+                    <span>&lt; {thresholds.low}% completed (Red)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 rounded bg-green-100 border border-green-300 mr-3"></div>
+                    <span>{thresholds.low}% - {thresholds.high - 1}% completed (Green)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 rounded bg-yellow-100 border border-yellow-400 mr-3"></div>
+                    <span>{thresholds.high}% completed (Golden)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 rounded bg-white border border-gray-200 mr-3"></div>
+                    <span>Future or today (White)</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleThresholdsUpdate}
+                disabled={isSaving}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {isSaving ? 'Saving...' : 'Save Threshold Settings'}
               </button>
             </div>
           </div>

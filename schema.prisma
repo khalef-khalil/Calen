@@ -21,7 +21,8 @@ model Task {
   subcategoryId String?
   isRecurring Boolean  @default(false)
   recurringId String?
-  isCompleted Boolean  @default(false)
+  status      String   @default("scheduled") // "scheduled", "pending", "completed", "cancelled", "skipped"
+  isCompleted Boolean  @default(false) // Kept for backward compatibility
   completedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -32,6 +33,7 @@ model Task {
   recurringTask RecurringTask? @relation(fields: [recurringId], references: [id])
 
   @@index([date])
+  @@index([status])
   @@index([recurringId])
   @@index([categoryId])
   @@index([subcategoryId])
@@ -105,4 +107,12 @@ model Subcategory {
   @@index([categoryId])
   @@index([isActive])
   @@index([order])
+}
+
+model Settings {
+  id                        String   @id @default(cuid())
+  completionThresholdLow    Int      @default(50)  // Below this percentage = red day
+  completionThresholdHigh   Int      @default(100) // At or above low and below this = green day, at 100 = golden day
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 }

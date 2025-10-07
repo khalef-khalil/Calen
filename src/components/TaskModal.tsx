@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import { createDateTime } from '@/lib/date-utils'
-import { Task } from '@/types/category'
+import { Task, TaskStatus } from '@/types/task'
+import { Task as CategoryTask } from '@/types/category'
 import { useCategories } from '@/contexts/CategoryContext'
 import { generateRecurringDates, createTaskInstance } from '@/lib/recurring-dates'
 
@@ -35,7 +36,8 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
     categoryId: '',
     subcategoryId: '',
     isRecurring: false,
-    isCompleted: false,
+    status: 'scheduled' as TaskStatus,
+    isCompleted: false, // Kept for backward compatibility
     // Recurring task fields
     frequency: 'daily' as 'daily' | 'weekly' | 'biweekly' | 'monthly',
     dayOfWeek: 1, // Monday by default
@@ -65,6 +67,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
         categoryId: task.categoryId || '',
         subcategoryId: task.subcategoryId || '',
         isRecurring: task.isRecurring,
+        status: task.status || 'scheduled',
         isCompleted: task.isCompleted ?? false,
         // Load recurring task fields from the recurring task template if available
         frequency: recurringData?.frequency || 'daily',
@@ -155,8 +158,9 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
           subcategoryId: formData.subcategoryId || null,
           isRecurring: formData.isRecurring,
           recurringId: task.recurringId || null,
-          isCompleted: formData.isCompleted,
-          completedAt: formData.isCompleted ? new Date() : null,
+          status: formData.status,
+          isCompleted: formData.status === 'completed',
+          completedAt: formData.status === 'completed' ? new Date() : null,
         }
 
         // Add recurring task editing options if this is a recurring task
@@ -284,8 +288,9 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
           subcategoryId: formData.subcategoryId || null,
           isRecurring: false,
           recurringId: null,
-          isCompleted: formData.isCompleted,
-          completedAt: formData.isCompleted ? new Date() : null,
+          status: 'scheduled', // New tasks are always scheduled
+          isCompleted: false,
+          completedAt: null,
         })
       }
       
@@ -470,18 +475,33 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
                   )}
 
           <div className="space-y-3">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isCompleted"
-                checked={formData.isCompleted}
-                onChange={(e) => setFormData(prev => ({ ...prev, isCompleted: e.target.checked }))}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isCompleted" className="ml-2 text-sm text-gray-700">
-                Mark as completed
-              </label>
-            </div>
+            {/* Status Selection - Only show for existing tasks */}
+            {task && (
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                  Task Status
+                </label>
+                <select
+                  id="status"
+                  value={formData.status}
+                  onChange={(e) => {
+                    const newStatus = e.target.value as TaskStatus
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      status: newStatus,
+                      isCompleted: newStatus === 'completed'
+                    }))
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="scheduled">Scheduled</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="skipped">Skipped</option>
+                </select>
+              </div>
+            )}
 
             <div className="flex items-center">
               <input

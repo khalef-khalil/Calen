@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid3X3 } from 'lucide-react'
 import { getCalendarDays, getPreviousMonth, getNextMonth, formatDate } from '@/lib/date-utils'
 import { Task } from '@/types/category'
+import { Settings } from '@/types/task'
 import { useCategories } from '@/contexts/CategoryContext'
 import DayView from './DayView'
 import WeekView from './WeekView'
@@ -25,8 +26,63 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
   const [triggerPosition, setTriggerPosition] = useState<{ x: number; y: number } | undefined>(undefined)
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
   const [clickedTime, setClickedTime] = useState<string | null>(null)
+  const [settings, setSettings] = useState<Settings | null>(null)
+
+  // Load completion settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/settings')
+        if (response.ok) {
+          const data = await response.json()
+          setSettings(data)
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error)
+      }
+    }
+    loadSettings()
+  }, [])
 
   const calendarDays = getCalendarDays(currentDate)
+
+  // Calculate day background color based on completion rate
+  const getDayBackgroundColor = (date: Date, dayTasks: Task[]) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const dayDate = new Date(date)
+    dayDate.setHours(0, 0, 0, 0)
+    
+    // Only color past days (not today or future)
+    if (dayDate >= today) {
+      return 'bg-white'
+    }
+    
+    // If no tasks, use default white
+    if (dayTasks.length === 0) {
+      return 'bg-white'
+    }
+    
+    // Calculate completion rate based on status
+    const completedCount = dayTasks.filter(task => task.status === 'completed').length
+    const completionRate = (completedCount / dayTasks.length) * 100
+    
+    // Use thresholds from settings (default to 50/100 if not loaded)
+    const thresholdLow = settings?.completionThresholdLow ?? 50
+    const thresholdHigh = settings?.completionThresholdHigh ?? 100
+    
+    // Color logic:
+    // - Below thresholdLow: Red
+    // - Between thresholdLow and thresholdHigh: Green
+    // - At thresholdHigh (100%): Golden
+    if (completionRate >= thresholdHigh) {
+      return 'bg-yellow-100 border-yellow-400' // Golden
+    } else if (completionRate >= thresholdLow) {
+      return 'bg-green-100 border-green-300' // Green
+    } else {
+      return 'bg-red-100 border-red-300' // Red
+    }
+  }
 
   // Grouper les tâches par date (timezone-safe)
   const tasksByDate = tasks.reduce((acc, task) => {
@@ -178,15 +234,16 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                   const dateKey = `${year}-${month}-${dayNum}`
                   const dayTasks = tasksByDate[dateKey] || []
                   const isSelected = selectedDate && day.date.toDateString() === selectedDate.toDateString()
+                  const dayBgColor = getDayBackgroundColor(day.date, dayTasks)
 
                   return (
                     <div
                       key={index}
                       className={`
-                        min-h-[120px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors group
-                        ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
+                        min-h-[120px] p-2 border cursor-pointer hover:opacity-90 transition-all group
+                        ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400 border-gray-200' : dayBgColor}
                         ${day.isToday ? 'bg-blue-50 border-blue-200' : ''}
-                        ${isSelected ? 'bg-blue-100 border-blue-300' : ''}
+                        ${isSelected ? 'ring-2 ring-blue-400' : ''}
                       `}
                       onClick={() => handleDateClick(day.date)}
                     >

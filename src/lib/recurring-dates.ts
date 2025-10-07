@@ -134,5 +134,8 @@ export function createTaskInstance(
     subcategoryId: baseTask.subcategoryId,
     isRecurring: true,
     recurringId: null, // We'll set this after creating the recurring task definition
+    status: 'scheduled' as const, // All new recurring tasks start as scheduled
+    isCompleted: false,
+    completedAt: null,
   }
 }

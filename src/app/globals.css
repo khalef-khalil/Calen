@@ -52,7 +52,8 @@ body {
   .border-slate-200, .border-gray-200, .border-zinc-200, .border-neutral-200, .border-stone-200, .border-amber-200,
   .border-blue-300, .border-green-300, .border-purple-300, .border-orange-300, .border-pink-300, .border-red-300, .border-indigo-300, .border-teal-300,
   .border-yellow-300, .border-lime-300, .border-emerald-300, .border-cyan-300, .border-sky-300, .border-violet-300, .border-fuchsia-300, .border-rose-300,
-  .border-slate-300, .border-gray-300, .border-zinc-300, .border-neutral-300, .border-stone-300, .border-amber-300 {}
+  .border-slate-300, .border-gray-300, .border-zinc-300, .border-neutral-300, .border-stone-300, .border-amber-300,
+  .border-yellow-400 {}
   
   /* Text colors */
   .text-blue-700, .text-green-700, .text-purple-700, .text-orange-700, .text-pink-700, .text-red-700, .text-indigo-700, .text-teal-700,
