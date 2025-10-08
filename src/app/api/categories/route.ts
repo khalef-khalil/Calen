@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const category = await prisma.category.create({
       data: {
         name,
-        description,
+        description: description || null,
         icon,
         color,
         weeklyGoal,
@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(category, { status: 201 })
   } catch (error) {
     console.error('Erreur lors de la création de la catégorie:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Erreur serveur inconnue'
+    return NextResponse.json({ 
+      error: 'Erreur lors de la création de la catégorie',
+      details: errorMessage 
+    }, { status: 500 })
   }
 }

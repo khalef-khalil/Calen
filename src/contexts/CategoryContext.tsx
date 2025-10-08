@@ -63,9 +63,16 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
+      let errorData: any = {}
+      try {
+        errorData = await response.json()
+      } catch (e) {
+        console.error('Failed to parse error response:', e)
+        throw new Error(`Erreur lors de la création de la catégorie: Erreur serveur (${response.status})`)
+      }
       console.error('Category creation failed:', errorData)
-      throw new Error(`Erreur lors de la création de la catégorie: ${errorData.error || 'Unknown error'}`)
+      const errorMessage = errorData.error || errorData.details || 'Unknown error'
+      throw new Error(`Erreur lors de la création de la catégorie: ${errorMessage}`)
     }
 
     const newCategory = await response.json()

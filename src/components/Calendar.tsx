@@ -6,6 +6,7 @@ import { getCalendarDays, getPreviousMonth, getNextMonth, formatDate } from '@/l
 import { Task } from '@/types/category'
 import { Settings } from '@/types/task'
 import { useCategories } from '@/contexts/CategoryContext'
+import { getTaskStatusBadge, getTaskOpacity, shouldStrikethrough } from '@/lib/task-utils'
 import DayView from './DayView'
 import WeekView from './WeekView'
 import TaskModal from './TaskModal'
@@ -266,37 +267,41 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                       <div className="space-y-1">
                         {dayTasks.slice(0, 3).map((task) => {
                           const category = categories.find(cat => cat.id === task.categoryId)
+                          const statusInfo = getTaskStatusBadge(task.status)
+                          const opacity = getTaskOpacity(task.status)
+                          const strikethrough = shouldStrikethrough(task.status)
+                          
                           const colorClasses = {
-                            blue: task.isCompleted ? 'bg-blue-200 text-blue-900 line-through opacity-75' : 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-                            green: task.isCompleted ? 'bg-green-200 text-green-900 line-through opacity-75' : 'bg-green-100 text-green-800 hover:bg-green-200',
-                            purple: task.isCompleted ? 'bg-purple-200 text-purple-900 line-through opacity-75' : 'bg-purple-100 text-purple-800 hover:bg-purple-200',
-                            orange: task.isCompleted ? 'bg-orange-200 text-orange-900 line-through opacity-75' : 'bg-orange-100 text-orange-800 hover:bg-orange-200',
-                            pink: task.isCompleted ? 'bg-pink-200 text-pink-900 line-through opacity-75' : 'bg-pink-100 text-pink-800 hover:bg-pink-200',
-                            red: task.isCompleted ? 'bg-red-200 text-red-900 line-through opacity-75' : 'bg-red-100 text-red-800 hover:bg-red-200',
-                            indigo: task.isCompleted ? 'bg-indigo-200 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-                            teal: task.isCompleted ? 'bg-teal-200 text-teal-900 line-through opacity-75' : 'bg-teal-100 text-teal-800 hover:bg-teal-200',
-                            yellow: task.isCompleted ? 'bg-yellow-200 text-yellow-900 line-through opacity-75' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-                            lime: task.isCompleted ? 'bg-lime-200 text-lime-900 line-through opacity-75' : 'bg-lime-100 text-lime-800 hover:bg-lime-200',
-                            emerald: task.isCompleted ? 'bg-emerald-200 text-emerald-900 line-through opacity-75' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
-                            cyan: task.isCompleted ? 'bg-cyan-200 text-cyan-900 line-through opacity-75' : 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200',
-                            sky: task.isCompleted ? 'bg-sky-200 text-sky-900 line-through opacity-75' : 'bg-sky-100 text-sky-800 hover:bg-sky-200',
-                            violet: task.isCompleted ? 'bg-violet-200 text-violet-900 line-through opacity-75' : 'bg-violet-100 text-violet-800 hover:bg-violet-200',
-                            fuchsia: task.isCompleted ? 'bg-fuchsia-200 text-fuchsia-900 line-through opacity-75' : 'bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200',
-                            rose: task.isCompleted ? 'bg-rose-200 text-rose-900 line-through opacity-75' : 'bg-rose-100 text-rose-800 hover:bg-rose-200',
-                            slate: task.isCompleted ? 'bg-slate-200 text-slate-900 line-through opacity-75' : 'bg-slate-100 text-slate-800 hover:bg-slate-200',
-                            gray: task.isCompleted ? 'bg-gray-200 text-gray-900 line-through opacity-75' : 'bg-gray-100 text-gray-800 hover:bg-gray-200',
-                            zinc: task.isCompleted ? 'bg-zinc-200 text-zinc-900 line-through opacity-75' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200',
-                            neutral: task.isCompleted ? 'bg-neutral-200 text-neutral-900 line-through opacity-75' : 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200',
-                            stone: task.isCompleted ? 'bg-stone-200 text-stone-900 line-through opacity-75' : 'bg-stone-100 text-stone-800 hover:bg-stone-200',
-                            amber: task.isCompleted ? 'bg-amber-200 text-amber-900 line-through opacity-75' : 'bg-amber-100 text-amber-800 hover:bg-amber-200',
+                            blue: `bg-blue-100 text-blue-800 hover:bg-blue-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            green: `bg-green-100 text-green-800 hover:bg-green-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            purple: `bg-purple-100 text-purple-800 hover:bg-purple-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            orange: `bg-orange-100 text-orange-800 hover:bg-orange-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            pink: `bg-pink-100 text-pink-800 hover:bg-pink-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            red: `bg-red-100 text-red-800 hover:bg-red-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            indigo: `bg-indigo-100 text-indigo-800 hover:bg-indigo-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            teal: `bg-teal-100 text-teal-800 hover:bg-teal-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            yellow: `bg-yellow-100 text-yellow-800 hover:bg-yellow-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            lime: `bg-lime-100 text-lime-800 hover:bg-lime-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            emerald: `bg-emerald-100 text-emerald-800 hover:bg-emerald-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            cyan: `bg-cyan-100 text-cyan-800 hover:bg-cyan-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            sky: `bg-sky-100 text-sky-800 hover:bg-sky-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            violet: `bg-violet-100 text-violet-800 hover:bg-violet-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            fuchsia: `bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            rose: `bg-rose-100 text-rose-800 hover:bg-rose-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            slate: `bg-slate-100 text-slate-800 hover:bg-slate-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            gray: `bg-gray-100 text-gray-800 hover:bg-gray-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            zinc: `bg-zinc-100 text-zinc-800 hover:bg-zinc-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            neutral: `bg-neutral-100 text-neutral-800 hover:bg-neutral-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            stone: `bg-stone-100 text-stone-800 hover:bg-stone-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+                            amber: `bg-amber-100 text-amber-800 hover:bg-amber-200 ${opacity} ${strikethrough ? 'line-through' : ''}`,
                           }
                           return (
                             <div
                               key={task.id}
                               onClick={(e) => handleTaskClick(task, e)}
-                              className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || (task.isCompleted ? 'bg-gray-200 text-gray-900 line-through opacity-75' : 'bg-gray-100 text-gray-800 hover:bg-gray-200')}`}
+                              className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${colorClasses[category?.color as keyof typeof colorClasses] || `bg-gray-100 text-gray-800 hover:bg-gray-200 ${opacity} ${strikethrough ? 'line-through' : ''}`}`}
                             >
-                              {task.isCompleted && '✓ '}{category?.icon} {task.title}
+                              {statusInfo.icon} {category?.icon} {task.title}
                             </div>
                           )
                         })}

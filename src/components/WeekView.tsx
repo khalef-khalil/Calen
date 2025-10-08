@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { Task } from '@/types/category'
+import { TaskStatus } from '@/types/task'
 import { useCategories } from '@/contexts/CategoryContext'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { getTaskStatusBadge, getTaskOpacity, shouldStrikethrough } from '@/lib/task-utils'
 
 interface WeekViewProps {
   tasks: Task[]
@@ -134,33 +136,35 @@ export default function WeekView({
     })
   }
 
-  const getCategoryColor = (categoryId: string, isCompleted: boolean) => {
+  const getCategoryColor = (categoryId: string, status: TaskStatus) => {
     const category = categories.find(cat => cat.id === categoryId)
+    const opacity = getTaskOpacity(status)
+    const strikethrough = shouldStrikethrough(status)
     const colorMap = {
-      blue: isCompleted ? 'bg-blue-200 border-blue-300 text-blue-900 line-through opacity-75' : 'bg-blue-100 border-blue-200 text-blue-800',
-      green: isCompleted ? 'bg-green-200 border-green-300 text-green-900 line-through opacity-75' : 'bg-green-100 border-green-200 text-green-800',
-      purple: isCompleted ? 'bg-purple-200 border-purple-300 text-purple-900 line-through opacity-75' : 'bg-purple-100 border-purple-200 text-purple-800',
-      orange: isCompleted ? 'bg-orange-200 border-orange-300 text-orange-900 line-through opacity-75' : 'bg-orange-100 border-orange-200 text-orange-800',
-      pink: isCompleted ? 'bg-pink-200 border-pink-300 text-pink-900 line-through opacity-75' : 'bg-pink-100 border-pink-200 text-pink-800',
-      red: isCompleted ? 'bg-red-200 border-red-300 text-red-900 line-through opacity-75' : 'bg-red-100 border-red-200 text-red-800',
-      indigo: isCompleted ? 'bg-indigo-200 border-indigo-300 text-indigo-900 line-through opacity-75' : 'bg-indigo-100 border-indigo-200 text-indigo-800',
-      teal: isCompleted ? 'bg-teal-200 border-teal-300 text-teal-900 line-through opacity-75' : 'bg-teal-100 border-teal-200 text-teal-800',
-      yellow: isCompleted ? 'bg-yellow-200 border-yellow-300 text-yellow-900 line-through opacity-75' : 'bg-yellow-100 border-yellow-200 text-yellow-800',
-      lime: isCompleted ? 'bg-lime-200 border-lime-300 text-lime-900 line-through opacity-75' : 'bg-lime-100 border-lime-200 text-lime-800',
-      emerald: isCompleted ? 'bg-emerald-200 border-emerald-300 text-emerald-900 line-through opacity-75' : 'bg-emerald-100 border-emerald-200 text-emerald-800',
-      cyan: isCompleted ? 'bg-cyan-200 border-cyan-300 text-cyan-900 line-through opacity-75' : 'bg-cyan-100 border-cyan-200 text-cyan-800',
-      sky: isCompleted ? 'bg-sky-200 border-sky-300 text-sky-900 line-through opacity-75' : 'bg-sky-100 border-sky-200 text-sky-800',
-      violet: isCompleted ? 'bg-violet-200 border-violet-300 text-violet-900 line-through opacity-75' : 'bg-violet-100 border-violet-200 text-violet-800',
-      fuchsia: isCompleted ? 'bg-fuchsia-200 border-fuchsia-300 text-fuchsia-900 line-through opacity-75' : 'bg-fuchsia-100 border-fuchsia-200 text-fuchsia-800',
-      rose: isCompleted ? 'bg-rose-200 border-rose-300 text-rose-900 line-through opacity-75' : 'bg-rose-100 border-rose-200 text-rose-800',
-      slate: isCompleted ? 'bg-slate-200 border-slate-300 text-slate-900 line-through opacity-75' : 'bg-slate-100 border-slate-200 text-slate-800',
-      gray: isCompleted ? 'bg-gray-200 border-gray-300 text-gray-900 line-through opacity-75' : 'bg-gray-100 border-gray-200 text-gray-800',
-      zinc: isCompleted ? 'bg-zinc-200 border-zinc-300 text-zinc-900 line-through opacity-75' : 'bg-zinc-100 border-zinc-200 text-zinc-800',
-      neutral: isCompleted ? 'bg-neutral-200 border-neutral-300 text-neutral-900 line-through opacity-75' : 'bg-neutral-100 border-neutral-200 text-neutral-800',
-      stone: isCompleted ? 'bg-stone-200 border-stone-300 text-stone-900 line-through opacity-75' : 'bg-stone-100 border-stone-200 text-stone-800',
-      amber: isCompleted ? 'bg-amber-200 border-amber-300 text-amber-900 line-through opacity-75' : 'bg-amber-100 border-amber-200 text-amber-800',
+      blue: `bg-blue-100 border-blue-200 text-blue-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      green: `bg-green-100 border-green-200 text-green-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      purple: `bg-purple-100 border-purple-200 text-purple-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      orange: `bg-orange-100 border-orange-200 text-orange-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      pink: `bg-pink-100 border-pink-200 text-pink-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      red: `bg-red-100 border-red-200 text-red-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      indigo: `bg-indigo-100 border-indigo-200 text-indigo-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      teal: `bg-teal-100 border-teal-200 text-teal-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      yellow: `bg-yellow-100 border-yellow-200 text-yellow-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      lime: `bg-lime-100 border-lime-200 text-lime-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      emerald: `bg-emerald-100 border-emerald-200 text-emerald-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      cyan: `bg-cyan-100 border-cyan-200 text-cyan-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      sky: `bg-sky-100 border-sky-200 text-sky-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      violet: `bg-violet-100 border-violet-200 text-violet-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      fuchsia: `bg-fuchsia-100 border-fuchsia-200 text-fuchsia-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      rose: `bg-rose-100 border-rose-200 text-rose-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      slate: `bg-slate-100 border-slate-200 text-slate-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      gray: `bg-gray-100 border-gray-200 text-gray-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      zinc: `bg-zinc-100 border-zinc-200 text-zinc-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      neutral: `bg-neutral-100 border-neutral-200 text-neutral-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      stone: `bg-stone-100 border-stone-200 text-stone-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
+      amber: `bg-amber-100 border-amber-200 text-amber-800 ${opacity} ${strikethrough ? 'line-through' : ''}`,
     }
-    return colorMap[category?.color as keyof typeof colorMap] || (isCompleted ? 'bg-gray-200 border-gray-300 text-gray-900 line-through opacity-75' : 'bg-gray-100 border-gray-200 text-gray-800')
+    return colorMap[category?.color as keyof typeof colorMap] || `bg-gray-100 border-gray-200 text-gray-800 ${opacity} ${strikethrough ? 'line-through' : ''}`
   }
 
   return (
@@ -281,10 +285,12 @@ export default function WeekView({
                             const height = `${duration * 32}px`
                             const top = `${position}%`
 
+                            const statusInfo = getTaskStatusBadge(task.status)
+                            
                             return (
                               <div
                                 key={task.id}
-                                className={`absolute left-0.5 right-0.5 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.isCompleted)}`}
+                                className={`absolute left-0.5 right-0.5 rounded-md border text-xs cursor-pointer transition-all hover:shadow-sm ${getCategoryColor(task.categoryId, task.status)}`}
                                 style={{
                                   top,
                                   height,
@@ -295,7 +301,7 @@ export default function WeekView({
                               >
                                 <div className="p-1 truncate">
                                   <div className="font-medium truncate">
-                                    {task.isCompleted && '✓ '}{category?.icon} {task.title}
+                                    {statusInfo.icon} {category?.icon} {task.title}
                                   </div>
                                   {task.endTime && (
                                     <div className="text-xs opacity-75 truncate">

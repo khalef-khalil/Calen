@@ -36,7 +36,7 @@ export async function PUT(
   const { id } = await params
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId, isCompleted, completedAt, editAllFuture } = body
+    const { title, description, startTime, endTime, date, categoryId, subcategoryId, isRecurring, recurringId, isCompleted, completedAt, status, editAllFuture } = body
 
     // First, get the current task to check if it's a recurring task
     const currentTask = await prisma.task.findUnique({
@@ -88,8 +88,9 @@ export async function PUT(
           endTime: endTime ? new Date(endTime) : null,
           categoryId,
           subcategoryId,
-          isCompleted,
-          completedAt: completedAt ? new Date(completedAt) : null,
+          status: status || 'scheduled',
+          isCompleted: status === 'completed',
+          completedAt: status === 'completed' ? new Date() : null,
         }
       })
     }
@@ -107,8 +108,9 @@ export async function PUT(
         subcategoryId,
         isRecurring,
         recurringId,
-        isCompleted,
-        completedAt: completedAt ? new Date(completedAt) : null,
+        status: status || 'scheduled',
+        isCompleted: status === 'completed',
+        completedAt: status === 'completed' ? new Date() : null,
       },
       include: {
         category: true,
