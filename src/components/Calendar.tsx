@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid3X3 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid3X3, RefreshCw } from 'lucide-react'
 import { getCalendarDays, getPreviousMonth, getNextMonth, formatDate } from '@/lib/date-utils'
 import { Task } from '@/types/category'
 import { Settings } from '@/types/task'
@@ -28,8 +28,9 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
   const [clickedTime, setClickedTime] = useState<string | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
+  const [isUpdatingStatuses, setIsUpdatingStatuses] = useState(false)
 
-  // Load completion settings
+  // Load completion settings and update task statuses
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -42,7 +43,28 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
         console.error('Error loading settings:', error)
       }
     }
+
+    const updateTaskStatuses = async () => {
+      try {
+        const response = await fetch('/api/tasks/update-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        if (response.ok) {
+          const result = await response.json()
+          if (result.updatedCount > 0) {
+            console.log(`Updated ${result.updatedCount} tasks from scheduled to pending`)
+          }
+        }
+      } catch (error) {
+        console.error('Error updating task statuses:', error)
+      }
+    }
+
     loadSettings()
+    updateTaskStatuses()
   }, [])
 
   const calendarDays = getCalendarDays(currentDate)
@@ -150,6 +172,33 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
     setEditingTask(null)
   }
 
+  const handleUpdateTaskStatuses = async () => {
+    setIsUpdatingStatuses(true)
+    try {
+      const response = await fetch('/api/tasks/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      if (response.ok) {
+        const result = await response.json()
+        if (result.updatedCount > 0) {
+          alert(`Updated ${result.updatedCount} tasks from scheduled to pending`)
+          // Reload tasks to show the changes
+          window.location.reload()
+        } else {
+          alert('No tasks needed status updates')
+        }
+      }
+    } catch (error) {
+      console.error('Error updating task statuses:', error)
+      alert('Error updating task statuses')
+    } finally {
+      setIsUpdatingStatuses(false)
+    }
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Calendrier principal */}
@@ -208,6 +257,14 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleUpdateTaskStatuses}
+                  disabled={isUpdatingStatuses}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                  title="Update task statuses (scheduled → pending)"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isUpdatingStatuses ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>

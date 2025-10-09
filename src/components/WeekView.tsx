@@ -31,17 +31,17 @@ export default function WeekView({
 }: WeekViewProps) {
   const { categories } = useCategories()
 
-  // Generate time slots from 5 AM to 11 PM with 30-minute intervals
-  const timeSlots = Array.from({ length: 38 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 5
-    const minute = (i % 2) * 30
+  // Generate time slots from 5 AM to 11 PM with 10-minute intervals
+  const timeSlots = Array.from({ length: 108 }, (_, i) => { // 18 hours * 6 slots = 108 slots
+    const hour = Math.floor(i / 6) + 5
+    const minute = (i % 6) * 10
     const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
     return {
       hour,
       minute,
       time: timeString,
-      displayTime: hour < 10 ? `0${hour}:00` : `${hour}:00`, // Keep 1-hour display
-      isFirstHalf: minute === 0 // First 30 minutes of the hour
+      displayTime: minute === 0 ? (hour < 10 ? `0${hour}:00` : `${hour}:00`) : '', // Only show hour labels
+      isFirstSlot: minute === 0 // First 10 minutes of the hour
     }
   })
 
@@ -76,7 +76,7 @@ export default function WeekView({
     
     const hour = task.startTime.getHours()
     const minute = task.startTime.getMinutes()
-    const timeSlotKey = `${hour}:${minute < 30 ? '00' : '30'}`
+    const timeSlotKey = `${hour}:${Math.floor(minute / 10) * 10}`
     
     if (!acc[dateKey]) {
       acc[dateKey] = {}
@@ -101,9 +101,9 @@ export default function WeekView({
   }
 
   const getTaskDuration = (task: Task) => {
-    if (!task.endTime) return 2 // 1 hour = 2 slots of 30 minutes
+    if (!task.endTime) return 6 // 1 hour = 6 slots of 10 minutes
     const durationInMinutes = (task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60)
-    const durationInSlots = Math.max(2, Math.ceil(durationInMinutes / 30)) // Each slot is 30 minutes
+    const durationInSlots = Math.max(1, Math.ceil(durationInMinutes / 10)) // Each slot is 10 minutes
     return durationInSlots
   }
 
@@ -131,7 +131,7 @@ export default function WeekView({
       const endTime = task.endTime ? task.endTime.getTime() : startTime + (60 * 60 * 1000) // Default 1 hour
       const slotStartTime = new Date(day)
       slotStartTime.setHours(timeSlot.hour, timeSlot.minute, 0, 0)
-      const slotEndTime = new Date(slotStartTime.getTime() + (30 * 60 * 1000)) // 30 minutes
+      const slotEndTime = new Date(slotStartTime.getTime() + (10 * 60 * 1000)) // 10 minutes
       
       // Check if this time slot overlaps with the task's time range
       return slotStartTime.getTime() < endTime && slotEndTime.getTime() > startTime
@@ -196,9 +196,9 @@ export default function WeekView({
             {/* Time Column */}
             <div className="border-r">
               {timeSlots.map((slot, index) => (
-                <div key={`${slot.hour}-${slot.minute}`} className="h-8 border-b border-gray-100 flex items-center justify-center">
-                  {/* Only show hour label for the first 30-minute slot of each hour */}
-                  {slot.isFirstHalf && (
+                <div key={`${slot.hour}-${slot.minute}`} className="h-4 border-b border-gray-100 flex items-center justify-center">
+                  {/* Only show hour label for the first 10-minute slot of each hour */}
+                  {slot.isFirstSlot && (
                     <span className="text-xs text-gray-500">{slot.displayTime}</span>
                   )}
                 </div>
@@ -218,18 +218,18 @@ export default function WeekView({
               return (
                 <div key={dayIndex} className="border-r last:border-r-0 relative">
                   {timeSlots.map((slot) => {
-                    const timeSlotKey = `${slot.hour}:${slot.minute < 30 ? '00' : '30'}`
+                    const timeSlotKey = `${slot.hour}:${slot.minute}`
                     const slotTasks = dayTasks[timeSlotKey] || []
                     const currentTime = new Date()
                     const isCurrentSlot = currentTime.getHours() === slot.hour && 
-                                       Math.floor(currentTime.getMinutes() / 30) * 30 === slot.minute && 
+                                       Math.floor(currentTime.getMinutes() / 10) * 10 === slot.minute && 
                                        isToday
                     const isOccupied = isTimeSlotOccupied(day, slot)
 
                     return (
                       <div
                         key={`${slot.hour}-${slot.minute}`}
-                        className={`h-8 border-b border-gray-100 relative group ${
+                        className={`h-4 border-b border-gray-100 relative group ${
                           isOccupied 
                             ? 'bg-gray-100 cursor-not-allowed' 
                             : `cursor-pointer ${isCurrentSlot ? 'bg-blue-50' : 'hover:bg-gray-50'}`
@@ -256,8 +256,8 @@ export default function WeekView({
                             const duration = getTaskDuration(task)
                             const position = getTaskPosition(task)
                             
-                            // Calculate height based on duration (each 30-min slot is 32px)
-                            const height = `${duration * 32}px`
+                            // Calculate height based on duration (each 10-min slot is 16px)
+                            const height = `${duration * 16}px`
                             const top = `${position}%`
 
                             const statusInfo = getTaskStatusBadge(task.status)

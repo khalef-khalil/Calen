@@ -114,7 +114,30 @@ export default function CalendarPage() {
 
   // Charger les tâches au montage du composant
   useEffect(() => {
-    loadTasks()
+    const initializeTasks = async () => {
+      // First update task statuses, then load tasks
+      try {
+        const statusResponse = await fetch('/api/tasks/update-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        if (statusResponse.ok) {
+          const result = await statusResponse.json()
+          if (result.updatedCount > 0) {
+            console.log(`Updated ${result.updatedCount} tasks from scheduled to pending`)
+          }
+        }
+      } catch (error) {
+        console.error('Error updating task statuses:', error)
+      }
+      
+      // Then load tasks
+      await loadTasks()
+    }
+    
+    initializeTasks()
     
     // Set minimum loading duration
     const minLoadingTimer = setTimeout(() => {

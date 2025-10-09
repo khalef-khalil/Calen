@@ -76,3 +76,24 @@ export const createLocalDateFromString = (dateString: string) => {
   const localDate = new Date(year, month - 1, day, 12, 0, 0, 0) // Use noon to avoid timezone issues
   return localDate
 }
+
+// Obtenir la date actuelle du système (pas de conversion de timezone)
+export const getSystemDate = () => {
+  return new Date()
+}
+
+// Obtenir le début de la journée actuelle du système
+export const getSystemStartOfDay = () => {
+  const now = new Date()
+  const startOfDay = new Date(now)
+  startOfDay.setHours(0, 0, 0, 0)
+  return startOfDay
+}
+
+// Formater une date pour l'input type="date" (YYYY-MM-DD) en local
+export const formatDateForInput = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
