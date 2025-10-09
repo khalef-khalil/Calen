@@ -153,7 +153,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Calendrier principal */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 overflow-auto">
         <div className="bg-white rounded-lg shadow-sm border">
           {/* En-tête du calendrier */}
           <div className="flex items-center justify-between p-6 border-b">
@@ -201,7 +201,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
                   onClick={() => setCurrentDate(new Date())}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                  Today
+                  {viewMode === 'month' ? 'Today' : 'This Week'}
                 </button>
                 <button
                   onClick={() => setCurrentDate(viewMode === 'month' ? getNextMonth(currentDate) : new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000))}
@@ -324,6 +324,8 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
               onTaskDelete={onTaskDelete}
               onTaskClick={handleTaskClick}
               onAddTask={handleAddTask}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
             />
           )}
         </div>
@@ -331,7 +333,7 @@ export default function Calendar({ tasks, onTaskCreate, onTaskUpdate, onTaskDele
 
       {/* Vue détaillée du jour */}
       {selectedDate && (
-        <div className="w-96 border-l bg-white">
+        <div className="w-96 border-l bg-white h-screen">
           <DayView
             date={selectedDate}
             tasks={(() => {

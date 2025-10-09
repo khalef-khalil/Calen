@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Task } from '@/types/category'
 import { TaskStatus } from '@/types/task'
 import { useCategories } from '@/contexts/CategoryContext'
@@ -16,6 +15,8 @@ interface WeekViewProps {
   onTaskDelete: (id: string) => Promise<void>
   onTaskClick: (task: Task, event?: React.MouseEvent) => void
   onAddTask: (date: Date, event?: React.MouseEvent, time?: string) => void
+  currentDate: Date
+  onDateChange: (date: Date) => void
 }
 
 export default function WeekView({ 
@@ -24,14 +25,15 @@ export default function WeekView({
   onTaskUpdate, 
   onTaskDelete, 
   onTaskClick, 
-  onAddTask 
+  onAddTask,
+  currentDate,
+  onDateChange
 }: WeekViewProps) {
   const { categories } = useCategories()
-  const [currentWeek, setCurrentWeek] = useState(new Date())
 
-  // Generate time slots from 6 AM to 11 PM with 30-minute intervals
-  const timeSlots = Array.from({ length: 36 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 6
+  // Generate time slots from 5 AM to 11 PM with 30-minute intervals
+  const timeSlots = Array.from({ length: 38 }, (_, i) => {
+    const hour = Math.floor(i / 2) + 5
     const minute = (i % 2) * 30
     const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
     return {
@@ -49,7 +51,7 @@ export default function WeekView({
     return Array.from({ length: 7 }, (_, i) => addDays(start, i))
   }
 
-  const weekDays = getWeekDays(currentWeek)
+  const weekDays = getWeekDays(currentDate)
 
   // Filter tasks to only include those within the current week
   const weekStart = weekDays[0]
@@ -87,15 +89,15 @@ export default function WeekView({
   }, {} as Record<string, Record<string, Task[]>>)
 
   const handlePreviousWeek = () => {
-    setCurrentWeek(prev => addDays(prev, -7))
+    onDateChange(addDays(currentDate, -7))
   }
 
   const handleNextWeek = () => {
-    setCurrentWeek(prev => addDays(prev, 7))
+    onDateChange(addDays(currentDate, 7))
   }
 
   const handleToday = () => {
-    setCurrentWeek(new Date())
+    onDateChange(new Date())
   }
 
   const getTaskDuration = (task: Task) => {
@@ -168,34 +170,7 @@ export default function WeekView({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {format(weekDays[0], 'd MMM', { locale: fr })} - {format(weekDays[6], 'd MMM yyyy', { locale: fr })}
-        </h1>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handlePreviousWeek}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleToday}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            This Week
-          </button>
-          <button
-            onClick={handleNextWeek}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
+    <div className="p-6">
       {/* Week Grid */}
       <div className="overflow-x-auto">
         <div className="min-w-[800px]">

@@ -18,9 +18,9 @@ interface DayViewProps {
 export default function DayView({ date, tasks, onTaskClick, onAddTask, onClose }: DayViewProps) {
   const { categories } = useCategories()
   
-  // Generate time slots from 6 AM to 11 PM with 5-minute intervals (12 slots per hour)
-  const timeSlots = Array.from({ length: 204 }, (_, i) => { // 17 hours * 12 slots = 204 slots
-    const hour = Math.floor(i / 12) + 6
+  // Generate time slots from 5 AM to 11 PM with 5-minute intervals (12 slots per hour)
+  const timeSlots = Array.from({ length: 216 }, (_, i) => { // 18 hours * 12 slots = 216 slots
+    const hour = Math.floor(i / 12) + 5
     const minute = (i % 12) * 5
     const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
     return {
@@ -37,11 +37,11 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask, onClose }
     const startHour = task.startTime.getHours()
     const startMinutes = task.startTime.getMinutes()
     
-    // Calculate total minutes from 6:00 AM (start of timeline)
-    const totalMinutesFromStart = (startHour - 6) * 60 + startMinutes
+    // Calculate total minutes from 5:00 AM (start of timeline)
+    const totalMinutesFromStart = (startHour - 5) * 60 + startMinutes
     
-    // Convert to percentage of the timeline (17 hours = 1020 minutes)
-    return (totalMinutesFromStart / 1020) * 100
+    // Convert to percentage of the timeline (18 hours = 1080 minutes)
+    return (totalMinutesFromStart / 1080) * 100
   }
 
   // Helper function to get absolute height based on duration (5-minute precision)
@@ -50,8 +50,8 @@ export default function DayView({ date, tasks, onTaskClick, onAddTask, onClose }
     const endTime = task.endTime ? task.endTime.getTime() : startTime + 60 * 60 * 1000
     const durationMinutes = (endTime - startTime) / (60 * 1000)
     
-    // Convert to percentage of the timeline (17 hours = 1020 minutes)
-    return (durationMinutes / 1020) * 100
+    // Convert to percentage of the timeline (18 hours = 1080 minutes)
+    return (durationMinutes / 1080) * 100
   }
 
   // Helper function to check if a task overlaps with a time slot (5-minute precision)
