@@ -62,3 +62,17 @@ export const createDateTime = (date: Date, time: string) => {
   newDate.setHours(hours, minutes, 0, 0)
   return newDate
 }
+
+// Créer une date à midi local (pour éviter les problèmes de timezone UTC+1)
+export const createLocalDate = (date: Date) => {
+  const localDate = new Date(date)
+  localDate.setHours(12, 0, 0, 0) // Use noon instead of midnight to avoid timezone issues
+  return localDate
+}
+
+// Créer une date à partir d'une chaîne de date (YYYY-MM-DD) en local
+export const createLocalDateFromString = (dateString: string) => {
+  const [year, month, day] = dateString.split('-').map(Number)
+  const localDate = new Date(year, month - 1, day, 12, 0, 0, 0) // Use noon to avoid timezone issues
+  return localDate
+}

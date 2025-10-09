@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Trash2 } from 'lucide-react'
-import { createDateTime } from '@/lib/date-utils'
+import { createDateTime, createLocalDate, createLocalDateFromString } from '@/lib/date-utils'
 import { Task, TaskStatus } from '@/types/task'
 import { Task as CategoryTask } from '@/types/category'
 import { useCategories } from '@/contexts/CategoryContext'
@@ -153,7 +153,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
           description: formData.description || null,
           startTime: startDateTime,
           endTime: endDateTime,
-          date: formData.date,
+          date: createLocalDate(formData.date),
           categoryId: formData.categoryId,
           subcategoryId: formData.subcategoryId || null,
           isRecurring: formData.isRecurring,
@@ -283,7 +283,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
           description: formData.description || null,
           startTime: startDateTime,
           endTime: endDateTime,
-          date: formData.date,
+          date: createLocalDate(formData.date),
           categoryId: formData.categoryId,
           subcategoryId: formData.subcategoryId || null,
           isRecurring: false,
@@ -420,7 +420,7 @@ export default function TaskModal({ task, selectedDate, clickedTime, onSave, onD
               <input
                 type="date"
                 value={formData.date.toISOString().split('T')[0]}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: new Date(e.target.value) }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: createLocalDateFromString(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>

@@ -1,4 +1,5 @@
 import { addDays, addWeeks, addMonths, getDay, getDate } from 'date-fns'
+import { createLocalDate } from './date-utils'
 
 export interface RecurringTaskSettings {
   frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly'
@@ -129,7 +130,7 @@ export function createTaskInstance(
     description: baseTask.description,
     startTime: startDateTime,
     endTime: endDateTime,
-    date: new Date(date),
+    date: createLocalDate(date),
     categoryId: baseTask.categoryId,
     subcategoryId: baseTask.subcategoryId,
     isRecurring: true,
